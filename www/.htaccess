@@ -1,0 +1,12 @@
+Options +FollowSymLinks -Multiviews
+SetEnv DEVELOP "true"
+
+ErrorDocument 404 ../cache/404.html
+
+RewriteEngine On
+RewriteRule ^$ ../cache/index.html [QSA,S=2]
+RewriteRule ^\d{4}/\d{2}/\d{2}/([^/\.]+\.html)$ ../cache/posts/$1 [QSA,S=1]
+RewriteRule ^.*\.html$ ../cache/pages/$0 [QSA]
+
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule .* index.php [L,QSA]

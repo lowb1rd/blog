@@ -1,0 +1,217 @@
+/* Layout
+========================================================== */
+body{
+    font-size: 1.5em;
+    font-family: "lucida grande", tahoma, verdana, arial, sans-serif;   
+    color: #333333;   
+}
+body > header {
+    background: -moz-linear-gradient(top, #ffffff, #f7f7f7);
+    background: #f7f7f7;
+    border-bottom: 1px solid #ccc;
+    height: 75px;
+}
+body > header h1 {
+    width: 900px;
+    margin: 0 auto;
+    font-size: 1.5em;
+    line-height: 75px;
+}
+body > header nav {    
+    width: 900px;
+    margin: -60px auto 0;
+}
+body > header nav ul {
+    float: right;
+    border: 1px solid #666;
+}
+body > header nav ul li {
+    display: inline;
+}
+#wrapper {
+    width: 900px;
+    margin: 0 auto;
+    border-left: 1px solid #ccc;
+    border-right: 1px solid #ccc;
+    padding: 0 10px;
+    min-height: 500px;
+}
+#wrapper > hgroup {
+    box-shadow: 0 0 2px 2px #ccc;
+    border: 1px solid #666;
+    border-radius: 5px 5px 0 0;
+    margin: 0 -11px 0;
+    text-align: center;
+    position: relative;
+    top: -20px;
+}
+#wrapper > hgroup h1 {
+    background: -moz-linear-gradient(top, #8199a7, #405a6a);
+    background: #405a6a;
+    border: 1px solid #fff;
+    border-radius: 5px 5px 0 0;
+    color: #fff;
+    line-height: 2;
+    font-size: 1em;
+}
+#wrapper > hgroup h2 {
+    background: #e7eef1;
+    font-size: .6em;
+}
+.half section {
+    float: left;
+    width: 430px;
+    border-top: 1px solid #ccc;
+    padding: 10px;
+    margin-top: 2em;
+}
+
+.half section:last-child {
+    border-left: 1px solid #ccc;
+    margin-left: -1px;
+}
+body > aside {
+
+}
+body > footer {
+    background: #f1f1f1;
+    border-top: 2px solid #ddd;
+    height: 75px;    
+}
+body > footer p {
+    width: 900px;
+    margin: 0 auto;
+    line-height: 75px;
+    text-align: center;
+}
+dl dt {
+    font-weight: bold;
+}
+hr {
+    margin-top: 15px;   
+    margin-bottom: 15px;   
+    width: 520px;   
+    height: 1px;   
+    background-color: #d8dfea; 
+}
+.tab li  {   
+    padding: 8px;   
+    background-color: #d8dfea;   
+    color: #3b5998;   
+    font-weight: bold;   
+    float: left;   
+    margin-right: 4px;   
+    text-decoration: none;   
+}   
+.tab li:hover  {   
+    background-color: #3b5998;   
+    color: #ffffff;   
+    cursor: hand;   
+}
+.fbgreybox  {   
+    background-color: #f7f7f7;   
+    border: 1px solid #cccccc;   
+    color: #333333;   
+    padding: 10px;   
+    font-weight: bold;   
+}   
+.bluebox  {   
+    background-color: #eceff6;   
+    border: 1px solid #d4dae8;   
+    color: #333333;   
+    padding: 10px;   
+    font-size: 13px;   
+    font-weight: bold;   
+}   
+.infobox  {   
+    background-color: #fff9d7;   
+    border: 1px solid #e2c822;   
+    color: #333333;   
+    padding: 10px;   
+    font-weight: bold;   
+}   
+.errorbox  {   
+    background-color: #ffebe8;   
+    border: 1px solid #dd3c10;   
+    color: #333333;   
+    padding: 10px;   
+    font-weight: bold;   
+}  
+/* Typo
+========================================================== */
+a {
+    color: #3b5998;
+    text-decoration: none;
+}
+a:hover {
+    text-decoration: underline;   
+}
+em {
+    color: #666;
+}
+strong {
+    color: #999;
+}
+h1 {
+    font-size: 24px;
+    font-weight: normal;
+    margin: 0;
+}
+h2 {
+    font-size: 20px;
+    font-weight: normal;
+    letter-spacing: -0.03em;
+    margin: 25px 0 15px;
+}
+h3 {
+    font-size: 15px;
+    margin: 25px 0 10px;
+}
+/* Forms
+========================================================== */
+label, input, textarea {
+    display: block;
+}
+form .error {
+    border: 2px solid #f00;
+}
+/* Tables
+========================================================== */
+table.styled {
+    margin: 0 0 1em;
+    border: 0 none;
+    border-collapse: collapse;
+    border-spacing: 0;
+}
+table.styled th,
+table.styled td {
+    border: 1px solid #DDDDDD;
+    padding: 4px 10px 4px 6px;
+    text-align: left;
+    vertical-align: top;
+}
+table.styled td {
+
+}
+/* Content
+========================================================== */
+/* Index */
+.boxes dl {
+    width: 268px;
+    float: left;
+    padding: 10px;
+    background: -moz-linear-gradient(-112deg, #EAF5FA, #C5E8F1) repeat scroll 0 0 transparent;
+    border-radius: 5px;
+    border: 1px solid #C4DCE2;
+}
+.boxes dl:nth-child(2) {
+    margin: 0 15px;
+}
+.boxes dl dt {
+    border-bottom: 1px solid #ccc;
+    margin: 0 -10px;
+    padding: 0 10px;
+}
+.boxes dl dd {
+    font-size: .8em;
+}
