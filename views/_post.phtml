@@ -1,5 +1,11 @@
-<section>
+<?php namespace View; Use _; ?>
+<ul class="breadcrumb">
+    <li><a href="<?=url('/')?>">neunzehn83.de</a></li>
+    <li><a href="<?=url($link)?>"><?=$title?></a></li>
+</ul>
+
+<article>
     <h1><?=$title?></h1>
-    <time><?=$date?></time>
+    <time><?=date('d.m.Y H:i', $date)?></time>
     <?=$content?>
-</section>
+</article>

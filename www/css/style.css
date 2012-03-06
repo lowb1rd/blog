@@ -1,142 +1,99 @@
 /* Layout
 ========================================================== */
-body{
-    font-size: 1.5em;
-    font-family: "lucida grande", tahoma, verdana, arial, sans-serif;   
-    color: #333333;   
+body {
+    font: 1.5em Georgia,Times,serif;
+    color: #333333;  
+    background: #eee;
+    font-size: 1.2em;
+    line-height: 1.5;
+    
+    width: 1050px; 
+    margin: 0 auto;
 }
 body > header {
-    background: -moz-linear-gradient(top, #ffffff, #f7f7f7);
-    background: #f7f7f7;
-    border-bottom: 1px solid #ccc;
-    height: 75px;
+    background: -moz-linear-gradient(top, #333, #222);
+    background: #2C2C2C;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25), 0 -1px 0 rgba(0, 0, 0, 0.1) inset;
+    text-align: center;
+    color: #fff;
+    position: relative;
+    padding-top: .5em;
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 65px;
+    padding-right: 200px;
 }
-body > header h1 {
-    width: 900px;
-    margin: 0 auto;
-    font-size: 1.5em;
-    line-height: 75px;
+body > header h1 a {
+    font-size: 1.0em;
+    font-weight: 200;
+    color: #ddd;
 }
-body > header nav {    
-    width: 900px;
-    margin: -60px auto 0;
+body > header h1 a:hover {
+    color: #fff;
+    text-decoration: none;
 }
-body > header nav ul {
-    float: right;
-    border: 1px solid #666;
+body > header h2 {
+    font-size: .8em;
+    margin-left: 1em;
 }
-body > header nav ul li {
+body > header ul li {
+    display: inline;
+    margin: 0 .8em;
+}
+body > header ul li a {
+    color: #999;
+}
+
+body > header h1, body > header h2{
     display: inline;
 }
-#wrapper {
-    width: 900px;
-    margin: 0 auto;
-    border-left: 1px solid #ccc;
-    border-right: 1px solid #ccc;
-    padding: 0 10px;
-    min-height: 500px;
-}
-#wrapper > hgroup {
-    box-shadow: 0 0 2px 2px #ccc;
-    border: 1px solid #666;
-    border-radius: 5px 5px 0 0;
-    margin: 0 -11px 0;
-    text-align: center;
-    position: relative;
-    top: -20px;
-}
-#wrapper > hgroup h1 {
-    background: -moz-linear-gradient(top, #8199a7, #405a6a);
-    background: #405a6a;
-    border: 1px solid #fff;
-    border-radius: 5px 5px 0 0;
-    color: #fff;
-    line-height: 2;
-    font-size: 1em;
-}
-#wrapper > hgroup h2 {
-    background: #e7eef1;
-    font-size: .6em;
-}
-.half section {
+body > div {
+    width: 810px;
+    margin: 75px auto 0;
+    padding: 0 20px 20px;
+    background: #fff;
+    border-radius: 0 0 6px 6px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+    
     float: left;
-    width: 430px;
-    border-top: 1px solid #ccc;
-    padding: 10px;
-    margin-top: 2em;
 }
-
-.half section:last-child {
-    border-left: 1px solid #ccc;
-    margin-left: -1px;
+body > div > img {
+    border-radius: 0 0 6px 6px;
 }
 body > aside {
+    float: right;
+    width: 170px;
+    padding: 20px 0 10px 30px;
+    margin-top: 75px;
+}
+body > aside h1 {
+    font-weight: normal;
+    font-size: .9em;
+    font-variant: small-caps;
+}
+body > aside ul {
+    padding-bottom: .7em;
+    margin: 0 0 .4em -10px;
+    border-bottom: 1px solid #ccc;
+}
+body > aside ul:last-child {
+    border-bottom: 0 none;
+}
+body > aside ul li {
+    font-size: .6em;
+    line-height: 1.8;
+    font-family: arial;
+    margin-left: 10px;
+}
 
-}
 body > footer {
-    background: #f1f1f1;
-    border-top: 2px solid #ddd;
-    height: 75px;    
-}
-body > footer p {
-    width: 900px;
-    margin: 0 auto;
-    line-height: 75px;
     text-align: center;
+    font-size: .8em;
+    clear: left;
+    color: #666;
+    margin-right: 200px;
 }
-dl dt {
-    font-weight: bold;
-}
-hr {
-    margin-top: 15px;   
-    margin-bottom: 15px;   
-    width: 520px;   
-    height: 1px;   
-    background-color: #d8dfea; 
-}
-.tab li  {   
-    padding: 8px;   
-    background-color: #d8dfea;   
-    color: #3b5998;   
-    font-weight: bold;   
-    float: left;   
-    margin-right: 4px;   
-    text-decoration: none;   
-}   
-.tab li:hover  {   
-    background-color: #3b5998;   
-    color: #ffffff;   
-    cursor: hand;   
-}
-.fbgreybox  {   
-    background-color: #f7f7f7;   
-    border: 1px solid #cccccc;   
-    color: #333333;   
-    padding: 10px;   
-    font-weight: bold;   
-}   
-.bluebox  {   
-    background-color: #eceff6;   
-    border: 1px solid #d4dae8;   
-    color: #333333;   
-    padding: 10px;   
-    font-size: 13px;   
-    font-weight: bold;   
-}   
-.infobox  {   
-    background-color: #fff9d7;   
-    border: 1px solid #e2c822;   
-    color: #333333;   
-    padding: 10px;   
-    font-weight: bold;   
-}   
-.errorbox  {   
-    background-color: #ffebe8;   
-    border: 1px solid #dd3c10;   
-    color: #333333;   
-    padding: 10px;   
-    font-weight: bold;   
-}  
 /* Typo
 ========================================================== */
 a {
@@ -153,9 +110,12 @@ strong {
     color: #999;
 }
 h1 {
-    font-size: 24px;
-    font-weight: normal;
+    font-size: 30px;
+    line-height: 36px;
+    font-weight: bold;
+    display: inline;
     margin: 0;
+    color: #333;
 }
 h2 {
     font-size: 20px;
@@ -166,6 +126,19 @@ h2 {
 h3 {
     font-size: 15px;
     margin: 25px 0 10px;
+}
+article {
+    margin: 1em 0 2em;
+}
+article time {
+    float: right;
+    color: #666; 
+}
+article h1 a {
+    color: #333;
+}
+article p {
+    margin-bottom: 1em;
 }
 /* Forms
 ========================================================== */
@@ -195,23 +168,9 @@ table.styled td {
 }
 /* Content
 ========================================================== */
-/* Index */
-.boxes dl {
-    width: 268px;
-    float: left;
-    padding: 10px;
-    background: -moz-linear-gradient(-112deg, #EAF5FA, #C5E8F1) repeat scroll 0 0 transparent;
-    border-radius: 5px;
-    border: 1px solid #C4DCE2;
+ul.breadcrumb li {
+    display: inline;
 }
-.boxes dl:nth-child(2) {
-    margin: 0 15px;
-}
-.boxes dl dt {
-    border-bottom: 1px solid #ccc;
-    margin: 0 -10px;
-    padding: 0 10px;
-}
-.boxes dl dd {
-    font-size: .8em;
+ul.breadcrumb li:not(:last-child):after {
+    content: " » ";
 }

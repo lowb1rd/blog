@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="utf-8" />
+    <title>No nix narrets! - neunzehn83.de</title>
+    
+    <link rel="stylesheet" href="/blog/www/css/reset.css" media="screen,projection" />
+    <link rel="stylesheet" href="/blog/www/css/style.css" media="screen,projection" />
+    <link rel="shortcut icon" href="favicon.ico" />    
+
+    <meta name="description" content="" />
+
+    <!--[if lt IE 9]>
+        <script src="js/ie.js"></script> 
+        <link rel="stylesheet" href="css/ie.css" media="screen,projection" />        
+    <![endif]-->   
+</head>
+<body>
+    <header>
+        <h1><a href="/blog/www">neunzehn83.de</a></h1>
+        <h2>Ein Mann, ein Blog, kein Plan.</h2>
+        <nav>
+            <ul>
+                <li><a href="/blog/www/account">Github</a></li>
+                <li><a href="/blog/www/account">Twitter</a></li>
+                <li><a href="/blog/www/account">About me</a></li>
+            </ul>
+        </nav>
+    </header>    
+    
+    <div>
+<ul class="breadcrumb">
+    <li><a href="/blog/www">neunzehn83.de</a></li>
+    <li><a href="/blog/www/2012/02/16/kreative-servernamen.html">Kreative Servernamen</a></li>
+</ul>
+
+<article>
+    <h1>Kreative Servernamen</h1>
+    <time>16.02.2012 08:00</time>
+    <p>Bei der Vergabe von Servernamen wird ja oft nach einem bestimmten Schema vorgegangen: Hauptstädte, Sternzeichen, Charakter aus Filmen oder Serien.</p>
+
+<p>Wie laaangweilig. Bei <a href="http://reddit.com">reddit</a> [Link wird nachgereicht sobald ich den Beitrag wieder finde] habe ich von einem wirklich interessanten Schema erfahren: Servernamen werden nach den Elementen im Periodensystem der selbigen benannt.</p>
+
+<p>Server #1 bekommt also den Namen "<strong>hydrogen</strong>" (Wasserstoff, 1 Proton), Server #2 dem Namen "<strong>helium</strong>" (2 Protonen) usw. Soweit schon mal nicht schlecht.</p>
+
+<p>Jetzt muss noch das letzte Byte der IP-Adresse mit der Protonenanzahl übereinstimmen. Server #1 hätte also die IP-Adresse 192.168.0.1, Server #2 die 192.168.0.2 usw. Somit lässt sich von dem Servernamen direkt auf die IP-Adresse schließen (vorausgesetzt man hat das Periodensystem der Elemente so grob im Kopf :)).</p>
+
+<p>Zudem kann man auch Aliasnamen im DNS anlegen, so dass das jeweilige Kürzel des Elements in die IP auflöst:</p>
+
+<pre>$ ping h
+PING h (192.168.0.1) 56(84) bytes of data.
+64 bytes from hydrogen.lokal (192.168.0.1): icmp_seq=1 ttl=64 time=0.023 ms</pre>
+
+<p>Wohoo! Leider nur in der Theorie wirklich nett. In der Wirklichkeit macht die Benennung nach Verwendung des Servers mehr Sinn (server-terminal, webserver, nasbox1, usw.). Die Beziehung zwischen Servername und IP-Adresse macht auch keinen Sinn. Zum einen haben die wenigsten das Periodensystem im Kopf, zum anderen wurde genau für diesen Zweck DNS erfunden: um Servernamen und IP-Adressen unabhängig voneinander zu machen. Der aufmerksame, chemie-affine Leser wird zudem die Begrenzung auf 118 unterschiedliche Servernamen bemängeln.</p>
+</article>
+        
+    </div>    
+    
+    <aside>
+        <h1>Seiten</h1>
+        <ul>
+            <li><a href="">About me</a></li>
+            <li><a href="">Archiv</a></li>
+        </ul>
+
+        <h1>Interessantes</h1>
+        <ul>
+            <li><a href="">About me</a></li>
+            <li><a href="">Archiv</a></li>
+        </ul>
+
+        <h1>Neue Beiträge</h1>
+        <ul>
+            <li><a href="">About me</a></li>
+            <li><a href="">Archiv</a></li>
+        </ul>
+
+        <h1>Kategorien</h1>
+        <ul>
+            <li><a href="">About me</a></li>
+            <li><a href="">Archiv</a></li>
+        </ul>
+
+        <h1>Blogroll</h1>
+        <ul>
+            <li><a href="">About me</a></li>
+            <li><a href="">Archiv</a></li>
+        </ul>    </aside>
+
+    <footer>
+        <p><small>&copy;</small> 2012 neunzehn83.de, powered by lmsbe | <a href="#">RSS</a></p>
+    </footer>
+</body>
+</html> 

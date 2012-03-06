@@ -4,13 +4,12 @@
 <html lang="de">
 <head>
     <meta charset="utf-8" />
-    <title>neunzehn83</title>
+    <title>No nix narrets! - neunzehn83.de</title>
     
     <link rel="stylesheet" href="<?=url('css/reset.css')?>" media="screen,projection" />
     <link rel="stylesheet" href="<?=url('css/style.css')?>" media="screen,projection" />
     <link rel="shortcut icon" href="favicon.ico" />    
-    
-    <meta name="keywords" content="" />
+
     <meta name="description" content="" />
 
     <!--[if lt IE 9]>
@@ -21,33 +20,26 @@
 <body>
     <header>
         <h1><a href="<?=url('/')?>">neunzehn83.de</a></h1>
+        <h2>Ein Mann, ein Blog, kein Plan.</h2>
         <nav>
             <ul>
-                <li>Features</li>
-                <li>Blog</li>
-                <?php if (_::Auth()->getId()) { ?> 
-                <li><a href="<?=url('account')?>">Account (<?=_::Auth()->user['name']?>)</a></li>
-                <?php if (_::ACL()->check('admin')) { ?>
-                <li><a href="<?=url('admin/index')?>"><strong>Admin</strong></a></li>
-                <?php } ?>
-                <li><a href="<?=url('account/logoff', null, array('token' => $token))?>">Logout</a></li>
-                <?php } else { ?> 
-                <li><a href="<?=url('signup')?>">Signup</a></li>
-                <li><a href="<?=url('login')?>">Login</a></li>
-                <?php } ?> 
+                <li><a href="<?=url('account')?>">Github</a></li>
+                <li><a href="<?=url('account')?>">Twitter</a></li>
+                <li><a href="<?=url('about')?>">About me</a></li>
             </ul>
         </nav>
-    </header>
+    </header>    
     
-    <div id="wrapper">
-        <?$T->render()?>
-    </div><!-- wrapper -->
+    <div>
+<?$T->render()?>        
+    </div>    
     
-    <footer>
-        <p>
-            &copy; <?=date('Y')?> neunzehn83.de, powered by lmsbe       
-        </p>
-    </footer>
+    <aside>
+<?$T->render('sidebar')?>
+    </aside>
 
+    <footer>
+        <p><small>&copy;</small> <?=date('Y')?> neunzehn83.de, powered by lmsbe | <a href="#">RSS</a></p>
+    </footer>
 </body>
-</html>
+</html> 

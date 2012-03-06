@@ -84,9 +84,6 @@ button {width: auto; overflow: visible;}
 .clear:after { clear: both; }  
 .clear { zoom: 1; }  
 
-/* new Linux- and Windows-friendly sans-serif font stack: http://mky.be/fontstack */
-body {font: 13px Helmet, Freesans, sans-serif;}
-
 body, select, input, textarea {color: #333;}
 
 a {color: #03f;}

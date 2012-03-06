@@ -254,45 +254,45 @@ namespace {
         public $slots = array();
         
         public function setView(_View $view) {
-            $this->view = $view;
+            $this->view = $view;            
         }
 
         public function go() {
             $controller = _::Request()->getController();
             $R = _::Request();
             $T = &$this;
-            $view = $this->view;
+            $this->view;
 
             if (!file_exists($file = $this->dir . '/' . $controller . '.php')) {
                 $this->do404();
                 die('Controller not found: ' . $controller);
             }
 
-            $view->context = 'content';
+            $this->view->context = 'content';
             $return = include $file;
       
             if ($return == _View::SUCCESS) {
-                $view->setControllerTemplate($controller.'_'._::Request()->getAction().'_success');
+                $this->view->setControllerTemplate($controller.'_'._::Request()->getAction().'_success');
             } else if ($return == _View::ACTION) {
 
-                $view->setControllerTemplate($controller.'_'._::Request()->getAction());
+                $this->view->setControllerTemplate($controller.'_'._::Request()->getAction());
             } else if ($return == _View::CONTROLLER) {
-                $view->setControllerTemplate($controller);
+                $this->view->setControllerTemplate($controller);
             }
 
-            if ($view->hasLayout() && file_exists($layoutController = $this->dir . '/layout.php')) {
-                $view->context = 'layout';
+            if ($this->view->hasLayout() && file_exists($layoutController = $this->dir . '/layout.php')) {
+                $this->view->context = 'layout';
                 include $layoutController;
             }
 
             foreach ($this->slots as $ph => $slot) {
-                $view->context = $ph;
-                if (!$view->isCached()) {
+                $this->view->context = $ph;
+                if (!$this->view->isCached()) {
                     include './' . $slot['slot'];
                 }
             }
 
-            $view->render();
+            $this->view->render();
         }
         public function delegateAction() {
             if (!file_exists($file = $this->dir . '/' . _::Request()->getController() . '_' . _::Request()->getAction() . '.php')) {
