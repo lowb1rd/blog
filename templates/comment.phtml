@@ -1,0 +1,19 @@
+<?php namespace View; Use _; ?>
+<ul class="breadcrumb">
+    <li><a href="<?=url('/')?>">neunzehn83.de</a></li>
+    <li><a href="<?=url($link)?>"><?=$title?></a></li>
+    <li>Schreibe einen Kommentar!</li>
+</ul>
+
+<?php if (!isset($success)) { ?>
+<form method="post">
+    <label>Name: <?=ifset($error['name'], null, '<span class="error">%s</span>')?><input type="text" name="name" value="<?=$R->name?>" /></label>
+    <label>E-Mail: <?=ifset($error['email'], null, '<span class="error">%s</span>')?><br /><input type="text" name="email" value="<?=$R->email?>" style="display: inline;" /> <small>Wird nicht veröffentlicht</small></label>
+    <label>Webseite: <input type="text" name="www" value="<?=$R->www?>" /><?=ifset($error['www'], null, '<span class="error">%s</span>')?></label>
+    <label>Kommentar:
+    <textarea name="comment"><?=$R->comment?></textarea> <?=ifset($error['comment'], null, '<span class="error">%s</span>')?></label>
+    <button>Senden</button><?=ifset($error['general'], null, '<span class="error">%s</span>')?>
+</form>
+<?php } else { ?>
+    <p>Kommentar gespeichert. <a href="<?=url($link)?>">Zurück zum Beitrag</a>.</p>
+<?php } ?>

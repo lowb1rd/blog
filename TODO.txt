@@ -1,5 +1,8 @@
 - Content-Seiten
 - Archiv
+- Sidebar
+- Kommentare
+- RSS
 - Bilder im Post
 - Syntax HL
-- Kommentare
+

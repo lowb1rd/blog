@@ -174,3 +174,14 @@ ul.breadcrumb li {
 ul.breadcrumb li:not(:last-child):after {
     content: " » ";
 }
+ol {
+    margin-left: 1.5em;
+}
+ol li:nth-child(odd) {
+    background: #f4f4f4;
+}
+pre {
+    margin-bottom: 1.5em;
+    margin-left: 1em;
+    white-space: pre;
+}

@@ -3,7 +3,7 @@ namespace {
     class _ {
         private static $config = array(
             'controller_dir' => './controller',
-            'templates_dir' => './views',
+            'templates_dir' => './templates',
         );
         private function __construct() { }
 
@@ -97,18 +97,22 @@ namespace {
                     // placeholder route
                     else if ($isPlaceholderRoute !== false) {
                         $route_parts = explode('/', trim($k, '/'));
+                        $hit = false;
                         foreach ($uri_parts as $index => $uri_part) {
-                            $route_part = ifset($route_parts[$index]);
+                            $route_part = ifset($route_parts[$index]);                            
+                            #echo "$route_part $uri_part<br />";
                             if ($route_part[0] != ':' && $route_part != $uri_part) {
                                 continue 2;
                             } else if ($route_part[0] == ':') {
                                 foreach ($v[2] as $param_key => &$param_value) {
                                     if ($param_value == $route_part) {
                                         $param_value = $uri_part;
+                                        $hit = true;
                                     }
                                 }
                             }
                         }
+                        if (!$hit) continue;
                         $uri_parts = array();
                     } else if (count($uri_parts) > 1) {
                         $uri_parts = array_combine(range(3,count($uri_parts)+1), array_slice($uri_parts, 1));
@@ -118,7 +122,9 @@ namespace {
                     if (isset($v[0])) $controller = $v[0];
                     if (isset($v[1])) $action = $v[1];
                     if (isset($v[2])) $params = $v[2];
-                    break;
+
+                    _::Request()->setEnv($controller, $action, $params);
+                    return $this;
                 }
             }
             // Normal Route
@@ -155,11 +161,11 @@ namespace {
         private $__action = 'index';
         private $__params = array();
 
-        public function init() {
-            $this->relpath = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/');
-            $this->uri = $_SERVER['REQUEST_URI'];
-            $this->host = $_SERVER['HTTP_HOST'];
-            $this->protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] ? 'http;//' : 'http://';
+        public function init($relpath = false, $uri = '', $host = '', $protocol = 'http://') {
+            $this->relpath = $relpath ? $relpath : rtrim(dirname($_SERVER['SCRIPT_NAME']), '/');
+            $this->uri = ifset($_SERVER['REQUEST_URI'], $uri);
+            $this->host = ifset($_SERVER['HTTP_HOST'], $host);
+            $this->protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] ? 'https://' : $protocol;
         }
         public function getController() {
             return $this->__controller;
@@ -167,8 +173,8 @@ namespace {
         public function getAction() {
             return $this->__action;
         }
-        public function getParam($key) {
-            return ifset($this->__params[$key], null);
+        public function getParam($key, $default = null) {
+            return ifset($this->__params[$key], $default);
         }
         public function getParams() {
             return $this->__params;
@@ -186,7 +192,7 @@ namespace {
         }
         public function getFullUri($uri) {
             if (ss($uri, 0, 4) == 'http') return $uri;
-            $ext = $uri[strlen($uri)-1] != '/' ? _::Router()->getExt() : '';
+            $ext = $uri[strlen($uri)-1] != '/' && strpos($uri, '.') === false ? _::Router()->getExt() : '';
             return rtrim($this->protocol . $this->host . $this->relpath . '/' . $uri . $ext, '/');
         }
         public function __get($key) {
@@ -231,13 +237,17 @@ namespace {
         public function started() {
             return $this->started;
         }
-        public function setFlash($msg) {
+        public function setFlash($msg, $key = false) {
             $this->start();
-            $_SESSION['flash'][] = $msg;
+            if ($key) {
+                $_SESSION['flash'][$key] = $msg;
+            } else {
+                $_SESSION['flash'][] = $msg;
+            }
         }
         public function getFlash() {
             $this->start();
-            if ($_SESSION['flash']) {
+            if (isset($_SESSION['flash']) && $_SESSION['flash']) {
                 $flash = $_SESSION['flash'];
                 unset($_SESSION['flash']);
                 return $flash;
@@ -261,14 +271,20 @@ namespace {
             $controller = _::Request()->getController();
             $R = _::Request();
             $T = &$this;
-            $this->view;
-
+            
+            _::Hook()->run('controller', 'init', 'pre'); 
             if (!file_exists($file = $this->dir . '/' . $controller . '.php')) {
                 $this->do404();
                 die('Controller not found: ' . $controller);
+            }            
+            _::Hook()->run('controller', 'init', 'post');
+            
+            if ($this->view && $this->view->hasLayout() && file_exists($layoutController = $this->dir . '/layout.php')) {
+                $this->view->context = 'layout';
+                include $layoutController;
             }
 
-            $this->view->context = 'content';
+            if ($this->view) $this->view->context = 'content';
             $return = include $file;
       
             if ($return == _View::SUCCESS) {
@@ -279,20 +295,19 @@ namespace {
             } else if ($return == _View::CONTROLLER) {
                 $this->view->setControllerTemplate($controller);
             }
+            $this->handleSlots();
+            
 
-            if ($this->view->hasLayout() && file_exists($layoutController = $this->dir . '/layout.php')) {
-                $this->view->context = 'layout';
-                include $layoutController;
-            }
-
+            $this->view->render();
+        }
+        public function handleSlots($view = false) {
+            if (!$view) $view = $this->view;
             foreach ($this->slots as $ph => $slot) {
-                $this->view->context = $ph;
-                if (!$this->view->isCached()) {
+                $view->context = $ph;
+                if (!$view->isCached()) {
                     include './' . $slot['slot'];
                 }
             }
-
-            $this->view->render();
         }
         public function delegateAction() {
             if (!file_exists($file = $this->dir . '/' . _::Request()->getController() . '_' . _::Request()->getAction() . '.php')) {
@@ -335,9 +350,11 @@ namespace {
         private $caches = array();
         public $context = 'layout';
 
-        private $tplDir = './views';
+        private $tplDir;
         
-        public function __construct() { }
+        public function __construct() { 
+            $this->tplDir = _::getConfig('templates_dir');
+        }
 
         protected function init() {
 
@@ -353,8 +370,7 @@ namespace {
         }
         public function render($slot = false) {
             $R = _::Request();
-            $T = &$this;
-            
+            $T = &$this;            
 
             if ($this->layout) {
                 $this->context = 'layout';
@@ -367,7 +383,7 @@ namespace {
                     $this->context = 'content';
                     $file = _::getConfig('templates_dir') . '/' . $slot . '.phtml';
                 } else {
-                    // slot w/ logic, new context
+                    // slot w/ logic, new context                   
                     $this->context = $slot;
                     $slot = _::Controller()->slots[$slot];
                     $file =  './' . $slot['template'];
@@ -468,9 +484,9 @@ namespace {
         public function get($cache_id) {
             $file = $this->dir . $cache_id;
             if (file_exists($file)) {
-                if (filemtime($file) > now()) {
+                if (filemtime($file) > time()) {
                     $contents =  file_get_contents($file);
-                    $contents = gzuncompress($contents);
+                    #$contents = gzuncompress($contents);
                     return unserialize($contents);
                 } else {
                     unlink($file);
@@ -478,14 +494,14 @@ namespace {
             }
             return false;
         }
-        public function set($cache_id, $value, $ttl, $compress) {
+        public function set($cache_id, $value, $ttl, $compress = false) {
             $file = $this->dir . $cache_id;
             $value = serialize($value);
             if ($compress) {
                 $value = gzcompress($value);
             }
             file_put_contents($file, $value);
-            touch($file, now()+$ttl);
+            touch($file, time()+$ttl);
         }
         public function delete($cache_id) {
             $file = $this->dir . $cache_id;
@@ -509,8 +525,8 @@ namespace {
         public function gc() {
             $handle = opendir($this->dir);
             while (($file = readdir($handle)) !== false) {
-                if (filemtime($file) < now()) {
-                    unlink($file);
+                if (filemtime($this->dir.$file) < time()) {
+                    unlink($this->dir.$file);
                 }
             }
         }
@@ -641,15 +657,19 @@ namespace {
         const DEV = 2;
         const DBG = 3;
 
-        public function __construct() { }
-
         private $config = array();
-        public function init($options = array()) {
-            $this->config = (object)array_merge(array('level' => 1, 'dir' => './tmp/logs', 'name' => 'general.log'), $options);
+
+        public function __construct($options = array()) { 
+            $this->config = (object)array_merge(array('level' => 1, 'type' => 'file', 'dir' => './tmp/logs', 'name' => 'general.log'), $options);
         }
+       
         public function log($msg, $lvl = _Log::PROD) {
             if ($this->config->level <= $lvl) {
-                error_log($msg, 3, $this->config->dir .'/'.$this->config->name);
+                if ($this->config->type == 'file') {
+                    error_log(date('Y-m-d H:i:s') . ': ' . $msg . "\n", 3, $this->config->dir .'/'.$this->config->name);
+                } else {
+                    echo $msg . "\n";
+                }
             }
         }
     }
@@ -838,11 +858,12 @@ namespace {
         private $config = array();
         private $total = 0;
         public function __construct($options = array()) {
-            $this->config = (object)array_merge(array('page' => 1, 'perpage' => 20), $options);
+            $this->config = (object)array_merge(array('page' => 1, 'perpage' => 20, 'uri' => ''), $options);
         }
         public function getTotal(ePdo $dbh) {
             list($total) = $dbh->query('SELECT FOUND_ROWS()')->fetch(PDO::FETCH_NUM);
             $this->total = $total;
+            return $total;
         }
         public function getLinks($options = array()) {
             $pages = ceil($this->total/$this->config->perpage);
@@ -854,13 +875,16 @@ namespace {
                 if ($i == $page) {
                     $cur = "<strong>$i</strong>";
                 }
-                $links .= " $cur ";
+                $links .= ' <a href="'.\View\url($this->config->uri, array(), array('page' => $i)).'">'.$cur.'</a> ';
             }
             return $links;
         }
         public function getLimit() {
             $start = ($this->config->page-1) * $this->config->perpage;
             return 'LIMIT ' . $start . ',' . $this->config->perpage;
+        }
+        public function hasMore() {
+            return ceil($this->total/$this->config->perpage) > $this->config->page;
         }
     }
     // select returnt, fetch fetched in das objekt
@@ -915,7 +939,16 @@ namespace {
         public function fetch($select = '*') {
             $this->fetched = true;
             try {
-                $this->data = $this->select($this->data, $select, 'fetch');
+                $data = $this->select($this->data, $select, 'fetch');
+                // check for NULL and do NULL -> array('NULL')
+                /*
+                foreach ($data as &$v) {
+                    if ($v === null) {
+                        $v = array('NULL');
+                    }
+                }
+                */
+                $this->data = $data;
                 #return true;
             } catch (PDOException $e) {
                 echo $e->getMessage();
@@ -923,12 +956,12 @@ namespace {
             }
             return $this;
         }
-        public function fetchAll($select = '*') {
+        public function fetchAll($select = '*', $order = false) {
             $this->fetched = true;
             try {
-                $this->data = $this->select($this->data, $select, 'fetchAll');
+                $this->data = $this->select($this->data, $select, 'fetchAll', $order);
                 $this->multiIndex = 0;
-                if ($this->pagination) $this->pagination->getTotal($this->dbh);
+                if ($this->pagination) return $this->pagination->getTotal($this->dbh);
                 return true;
             } catch (PDOException $e) {
                 echo $e->getMessage();
@@ -951,15 +984,18 @@ namespace {
                 return false;
             }
         }
+        public function getLastId() {
+            return $this->dbh->lastInsertId();
+        }
         public function getData() {
             return $this->data;
         }
         public function isValid() {
             return !empty($this->data);
         }
-        public function select($data = false, $select = '*', $fetchtype = 'fetch') {
+        public function select($data = false, $select = '*', $fetchtype = 'fetch', $order = false) {
             $limit = $this->pagination ? $this->pagination->getLimit() : '';
-            return $this->dbh->select($this->table, $data?:$this->criteria, $select, $fetchtype, $limit);
+            return $this->dbh->select($this->table, $data?:$this->criteria, $select, $fetchtype, $order, $limit);
         }
         public function delete($c = false) {
             return $this->dbh->delete($this->table, $c?:$this->criteria);
@@ -1108,10 +1144,11 @@ namespace {
         public function exists($table, $key, $value) {
             return $this->query("SELECT $key FROM $table WHERE $key = {$this->quote($value)}")->fetch(PDO::FETCH_NUM);
         }
-        public function select($table, $args, $select = '*', $fetchtype = 'fetch', $limit = '') {
+        public function select($table, $args, $select = '*', $fetchtype = 'fetch', $order = '', $limit = '') {
             $where = $this->buildArgs($args, ' AND ');
             $opt = $limit ? 'SQL_CALC_FOUND_ROWS' : '';
-            $stmt = $this->prepare($sql = "SELECT $opt $select FROM $table WHERE $where $limit");
+            $order = $order ? "ORDER BY $order" : ''; 
+            $stmt = $this->prepare($sql = "SELECT $opt $select FROM $table WHERE $where $order $limit");
             $stmt->execute($args);
             
             return $stmt->$fetchtype(PDO::FETCH_ASSOC);
@@ -1126,21 +1163,25 @@ namespace {
             $where = $this->buildArgs($c, ' AND ');
             $set = $this->buildArgs($data);
             return $this->prepare($sql = "UPDATE $table SET $set WHERE $where")->execute($c+$data);
-
         }
         public function delete($table, $c) {
             $where = $this->buildArgs($c, ' AND ');
             return $this->prepare("DELETE FROM $table WHERE $where")->execute($c);
         }
 
-        private function buildArgs($data, $sep =', ') {
+        public function buildArgs($data, $sep =', ') {
             $set = array();
             foreach ($data as $k => $v) {
                 if (is_array($v)) {
                     $left = ifset($v[2], $k);
                     $right = ifset($v[0], ':'.$k);
-
-                    $set[] = "$left = $right";
+                    if ($right === false) {
+                        $set[] = $left;
+                    } else {
+                        $set[] = "$left = $right";
+                    }
+                #} else if ($v === null) {
+                #    $set[] = $k;
                 } else {
                     $set[] = "$k = :$k";
                 }
@@ -1169,8 +1210,11 @@ namespace {
                     } else {
                         $v = $value;
                     }
+                } else if ($v === null) {
+                    unset($params[$k]);
                 }
             }
+
             if (isset($v)) unset($v);
             if (!$params)
                 $res = parent::execute();
@@ -1180,6 +1224,34 @@ namespace {
             if ($this->pdo->debug) $this->pdo->logQuery($this->queryString, microtime(true) - $starttime, 'execute');
 
             return $res;
+        }
+    }
+    class _Hook extends _Singleton {
+        protected static $_instance;
+        protected $hooks = array();
+        protected $options;
+        protected function init($options = array()) {
+            $this->options = (object)array_merge(array('dir' => './hooks'), $options);
+        }
+        public function run($env, $event, $type = 'pre') {
+            if (isset($this->hooks[$env][$event][$type])) {
+                if (is_callable($lambda = $this->hooks[$env][$event][$type])) {
+                    $lambda($env, $event, $type);
+                } else if (file_exists($file=$this->options->dir . '/' . $env . '_' . $event . '_' . $type . '.php')) {
+                    include $file;
+                }
+            }
+        }
+        public function add(array $runopt, $lambda = false) {
+            $env = $runopt[0];
+            $event = ifset($runopt[1], 'none');
+            $type = ifset($runopt[2], 'pre');
+            $this->hooks[$env][$event][$type] = $lambda;
+        }
+        public function clear($env, $event, $type) {
+            if (isset($this->hooks[$env][$event][$type])) {
+                unset($this->hooks[$env][$event][$type]);
+            }
         }
     }
 }
@@ -1254,6 +1326,9 @@ namespace {
     function e($string) {
         return htmlspecialchars($string, ENT_QUOTES, 'UTF-8');
     }
+    function nf($number, $dec = 0) {
+        return number_format($number, $dec, ',', '.');
+    }
     // Function aliases
     function len($string) { return strlen($string); }
     function lower($string) { return strtolower($string); }
@@ -1277,3 +1352,4 @@ namespace {
 
     spl_autoload_register('_::autoload');
 }
+ 

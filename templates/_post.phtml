@@ -6,6 +6,24 @@
 
 <article>
     <h1><?=$title?></h1>
-    <time><?=date('d.m.Y H:i', $date)?></time>
+    <time><?=$date?></time>
     <?=$content?>
+    
+    <footer>
+        <p>Geschrieben am <em><?=$formattedDate?></em> und abgelegt unter <em><?=$formattedTags?></em>.</p>
+    </footer>
+    
+    <aside>
+        <h1>Kommentare</h1>
+        <?php if ($comments) foreach ($comments as $comment) { ?>
+        <article>
+            <h1><?=$comment['title']?></h1>
+            <time><?=date('d.m.Y H:i', strtotime($comment['date']))?></time>
+            <p><?=$comment['comment']?></p>
+        </article>
+        <?php } else { ?> 
+
+        <?php } ?> 
+        <p><a href="<?=url('comment/'.$link)?>">Schreibe einen Kommentar!</a></p>
+    </aside>
 </article>

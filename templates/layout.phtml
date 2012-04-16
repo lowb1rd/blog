@@ -4,13 +4,14 @@
 <html lang="de">
 <head>
     <meta charset="utf-8" />
-    <title>No nix narrets! - neunzehn83.de</title>
+    <title><?=ifset($title, 'No nix narrets!')?> - neunzehn83.de</title>
     
     <link rel="stylesheet" href="<?=url('css/reset.css')?>" media="screen,projection" />
     <link rel="stylesheet" href="<?=url('css/style.css')?>" media="screen,projection" />
-    <link rel="shortcut icon" href="favicon.ico" />    
+    <link rel="alternate" type="application/rss+xml" title="RSS-Feed neunzehn83.de" href="<?=url('feed.xml')?>" />
+    <link rel="shortcut icon" href="favicon.ico" />
 
-    <meta name="description" content="" />
+    <meta name="description" content="Mein Blog über Dies &amp; Das, Sel' und Jenes, Webtechnik im Speziellen und Computer im Allgemeinen." />    
 
     <!--[if lt IE 9]>
         <script src="js/ie.js"></script> 
@@ -23,23 +24,23 @@
         <h2>Ein Mann, ein Blog, kein Plan.</h2>
         <nav>
             <ul>
-                <li><a href="<?=url('account')?>">Github</a></li>
-                <li><a href="<?=url('account')?>">Twitter</a></li>
+                <li><a href="https://github.com/lowb1rd">Github</a></li>
                 <li><a href="<?=url('about')?>">About me</a></li>
+                <li><a href="http://twitter.com/Bolle">Twitter</a></li>
             </ul>
         </nav>
     </header>    
     
     <div>
-<?$T->render()?>        
+<?$T->render()?> 
     </div>    
     
     <aside>
-<?$T->render('sidebar')?>
+<?$T->render('sidebar')?> 
     </aside>
 
     <footer>
-        <p><small>&copy;</small> <?=date('Y')?> neunzehn83.de, powered by lmsbe | <a href="#">RSS</a></p>
+        <p><small>&copy;</small> <?=date('Y')?> neunzehn83.de, powered by <a href="#">lmsbe</a> | <a href="<?=url('feed.xml')?>">RSS</a></p>
     </footer>
 </body>
 </html> 

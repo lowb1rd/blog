@@ -1,13 +1,15 @@
-Options +FollowSymLinks +Includes -Multiviews
+Options +FollowSymLinks -Multiviews
 SetEnv DEVELOP "true"
-
-XBitHack on
 
 ErrorDocument 404 ../cache/404.html
 
+# Wordpress Redirects
+
 RewriteEngine On
-RewriteRule ^$ ../cache/index.html [QSA,S=2]
-RewriteRule ^(\d{4})/(\d{2})/(\d{2})/([^/\.]+\.html)$ ../cache/posts/$1_$2_$3_$4 [QSA,S=1]
+RewriteRule ^$ ../cache/index.html [L]
+RewriteRule ^archiv\.html$ ../cache/archiv.html [L]
+RewriteRule ^feed\.xml$ ../cache/feed.xml [L]
+RewriteRule ^(\d{4})/(\d{2})/(\d{2})/(.+\.html)$ ../cache/posts/$1_$2_$3_$4 [L]
 RewriteRule ^.*\.html$ ../cache/pages/$0 [QSA]
 
 RewriteCond %{REQUEST_FILENAME} !-f

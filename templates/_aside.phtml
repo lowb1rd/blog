@@ -1,29 +1,35 @@
+<?php namespace View; Use _; ?>
         <h1>Seiten</h1>
         <ul>
-            <li><a href="">About me</a></li>
-            <li><a href="">Archiv</a></li>
+            <li><a href="<?=url('about')?>">About me</a></li>
+            <li><a href="<?=url('archiv')?>">Archiv</a></li>
         </ul>
 
         <h1>Interessantes</h1>
         <ul>
-            <li><a href="">About me</a></li>
-            <li><a href="">Archiv</a></li>
+<?php foreach ($featured as $post) { ?>
+            <li><a href="<?=url($post['link'])?>"><?=$post['title']?></a></li>
+<?php } ?>
+
         </ul>
 
         <h1>Neue Beiträge</h1>
         <ul>
-            <li><a href="">About me</a></li>
-            <li><a href="">Archiv</a></li>
+<?php foreach ($newest as $post) { ?>
+            <li><a href="<?=url($post['link'])?>"><?=$post['title']?></a></li>
+<?php } ?>
+
         </ul>
 
         <h1>Kategorien</h1>
         <ul>
-            <li><a href="">About me</a></li>
-            <li><a href="">Archiv</a></li>
+<?php foreach ($cats as $cat) { ?>
+            <li><a href="<?=url(\Model\Builder::makeUri($cat))?>"><?=$cat?></a></li>
+<?php } ?>
+
         </ul>
 
         <h1>Blogroll</h1>
         <ul>
-            <li><a href="">About me</a></li>
-            <li><a href="">Archiv</a></li>
+            <li><a href="http://blog.kevin-k.com/">kevin's blog</a></li>
         </ul>
