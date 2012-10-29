@@ -1,7 +1,7 @@
 <?php namespace Model; Use \_;
 class Builder {
-    private $pages = array();
-    private $posts = array();
+    public $pages = array();
+    public $posts = array();
 
     private $changedPosts = array();
 
@@ -38,15 +38,14 @@ class Builder {
     }
     public function checkCache($index_dir) {    
         if (!file_exists($index_dir)) mkdir($index_dir, null, true);
-        
         $datas = array_merge($this->pages, $this->posts);
         $count = count($datas);
         foreach ($datas as $k => $data) {
             if ($cli = _::Registry()->get('CLI')) $cli->log($k+1 ." / $count");
             $index_file = $index_dir . $data->type . 's/' . $data->filename;
-            $sha1 = sha1_file($data->file);       
+            $sha1 = sha1_file($data->file);
             if (_::Request()->force !== null || 
-            !file_exists($index_file) || file_get_contents($index_file) != $sha1) {
+            !file_exists($index_file) || file_get_contents($index_file) != $sha1) {                  
                 // Update Cache   
                 $this->updatePost($data, $index_dir, $index_file);
             }
@@ -55,12 +54,11 @@ class Builder {
     
     public function updatePost($data, $index_dir, $index_file) {
         $date = $data->getHeader('date');
-        
         if (!$date) {
             $date = date('Y-m-d H:i:s');
             $data->setHeader('date', $date);       
         }
-        
+
         if ($data->filename != $data->uri) {
             $data->rename($data->uri);
             $index_file = $index_dir . $data->type . 's/' . $data->filename;                    
@@ -70,7 +68,7 @@ class Builder {
         if (!$data->preview) {
             $cachefile = "cache/".$data->type."s/".$data->uri.".html";
             $date_upd = date('Y-m-d H:i:s');
-            $data->setHeader('last_updated', $date_upd);
+            ###$data->setHeader('last_updated', $date_upd);
             
             $content = $data->getContent();
             $viewdata['title'] = $data->getHeader('title');
@@ -79,13 +77,12 @@ class Builder {
             $viewdata['date'] = $data->getFormattedDate();                    
             $viewdata['formattedDate'] = $data->getFormattedDate(true);                    
             $viewdata['formattedTags'] = $data->getFormattedTags();
-            $viewdata['comments'] = $data->getComments();                    
-           
+            $viewdata['comments'] = $data->getComments();       
+
             $this->fetchTemplate('_' . $data->type, $cachefile, $viewdata, array('title' => $viewdata['title']));
-            
             if ($data->type == 'post') {
                 $this->changedPosts[] = $data->file;
-            }
+            } 
         }
         
         $data->save();
@@ -104,7 +101,7 @@ class Builder {
             }
         }
 
-        if ($update) {
+        if ($update || _::Request()->force !== null) {
             $posts = array();
             foreach ($frontpagePosts as $post) {      
                 $posts[] = array(
@@ -163,15 +160,17 @@ class Builder {
     }
     public function getSidebar() {
         $featured = $newest = $tags = array();
+        $i = 0;
         foreach ($this->posts as $k => $post) {
             if ($post->preview) continue;
+            $i++;
             $tags = array_merge($tags, $post->getHeader('tags'));
             $arr = array(
                 'title' => $post->getHeader('title'),               
                 'link' => $this->makeLink($post->filename) . '.html',
             );
             if ($post->featured) { $featured[] = $arr; }
-            if ($k < 3) { $newest[] = $arr; }
+            if ($i < 4) { $newest[] = $arr; }
         }
         asort($tags);
         return array($featured, $newest, array_unique($tags));
@@ -221,4 +220,4 @@ class Builder {
 
         file_put_contents($filename, $html);
     }
-}
+} 

@@ -1,6 +1,7 @@
 <?php
 
 $builder = _::Registry()->get('builder');
+if (!$builder) $builder = new \Model\Builder();
 
 // featured
 list($featured, $newest, $cats) = $builder->getSidebar();

@@ -63,8 +63,10 @@ if ($R->isPost()) {
     
     if (!$error) {
         // get the highest comment-nr
-        $comments = $data->getComments();        
-        $cnt = count($comments);
+        $comments = $data->getComments();  
+        
+        $cnt = count($comments);        
+
         $last = $comments[$cnt-1]['filename'];        
         $cnt = substr($last, strrpos($last, '-')+1);
 

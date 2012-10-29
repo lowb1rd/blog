@@ -1,0 +1,159 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/1999/REC-html401-19991224/strict.dtd">
+<html>
+<head>
+<META http-equiv=Content-Type content="text/html; charset=windows-1252">
+<title>Exported from Notepad++</title>
+<style type="text/css">
+span {
+	font-family: 'Courier New';
+	font-size: 10pt;
+	color: #000000;
+}
+.sc0 {
+}
+.sc1 {
+	color: #008000;
+}
+.sc2 {
+	color: #FF0000;
+}
+.sc3 {
+	color: #808080;
+}
+.sc4 {
+	color: #808080;
+}
+.sc5 {
+	font-weight: bold;
+	color: #0000FF;
+}
+.sc8 {
+	font-weight: bold;
+}
+.sc9 {
+	color: #FF00FF;
+}
+.sc10 {
+	font-weight: bold;
+	color: #000080;
+}
+.sc11 {
+}
+</style>
+</head>
+<body>
+
+<div style="float: left; white-space: pre; line-height: 1; background: #FFFFFF; ">
+<span class="sc1">FROM: http://neunzehn83.de/blog/2011/02/02/getmail-mit-imap-idle-unter-debian</span>
+<span class="sc1">#!/usr/bin/env python</span>
+<span class="sc0">
+</span><span class="sc1"># -*- coding: utf-8 -*-</span><span class="sc0">
+
+</span><span class="sc5">import</span><span class="sc0"> </span><span class="sc11">threading</span><span class="sc10">,</span><span class="sc0"> </span><span class="sc11">thread</span><span class="sc10">,</span><span class="sc0"> </span><span class="sc11">time</span><span class="sc10">,</span><span class="sc0"> </span><span class="sc11">signal</span><span class="sc10">,</span><span class="sc0"> </span><span class="sc11">os</span><span class="sc10">,</span><span class="sc0"> </span><span class="sc11">imaplib2</span><span class="sc0">
+</span><span class="sc5">from</span><span class="sc0"> </span><span class="sc11">ConfigParser</span><span class="sc0"> </span><span class="sc5">import</span><span class="sc0"> </span><span class="sc11">SafeConfigParser</span><span class="sc0">
+
+</span><span class="sc11">__version__</span><span class="sc0"> </span><span class="sc10">=</span><span class="sc0"> </span><span class="sc4">'0.0.1'</span><span class="sc0">
+
+</span><span class="sc11">executing</span><span class="sc0"> </span><span class="sc10">=</span><span class="sc0"> </span><span class="sc11">False</span><span class="sc0">
+</span><span class="sc5">class</span><span class="sc0"> </span><span class="sc8">Idler</span><span class="sc10">(</span><span class="sc11">threading</span><span class="sc10">.</span><span class="sc11">Thread</span><span class="sc10">):</span><span class="sc0">
+    </span><span class="sc5">def</span><span class="sc0"> </span><span class="sc9">__init__</span><span class="sc10">(</span><span class="sc11">self</span><span class="sc10">,</span><span class="sc0"> </span><span class="sc11">acc</span><span class="sc10">):</span><span class="sc0">
+        </span><span class="sc5">print</span><span class="sc0"> </span><span class="sc3">"%s: Starting Thread"</span><span class="sc0"> </span><span class="sc10">%</span><span class="sc11">acc</span><span class="sc10">[</span><span class="sc4">'acc'</span><span class="sc10">]</span><span class="sc0">
+        </span><span class="sc11">threading</span><span class="sc10">.</span><span class="sc11">Thread</span><span class="sc10">.</span><span class="sc11">__init__</span><span class="sc10">(</span><span class="sc11">self</span><span class="sc10">)</span><span class="sc0">
+        </span><span class="sc11">self</span><span class="sc10">.</span><span class="sc11">kill_received</span><span class="sc0"> </span><span class="sc10">=</span><span class="sc0"> </span><span class="sc11">False</span><span class="sc0">        
+        </span><span class="sc11">self</span><span class="sc10">.</span><span class="sc11">event</span><span class="sc0"> </span><span class="sc10">=</span><span class="sc0"> </span><span class="sc11">threading</span><span class="sc10">.</span><span class="sc11">Event</span><span class="sc10">()</span><span class="sc0">
+        </span><span class="sc11">self</span><span class="sc10">.</span><span class="sc11">Account</span><span class="sc0"> </span><span class="sc10">=</span><span class="sc0"> </span><span class="sc11">acc</span><span class="sc0">
+        </span><span class="sc11">self</span><span class="sc10">.</span><span class="sc11">start</span><span class="sc10">()</span><span class="sc0">
+
+    </span><span class="sc5">def</span><span class="sc0"> </span><span class="sc9">stop</span><span class="sc10">(</span><span class="sc11">self</span><span class="sc10">):</span><span class="sc0">
+        </span><span class="sc5">print</span><span class="sc0"> </span><span class="sc3">"%s: Restarting"</span><span class="sc0"> </span><span class="sc10">%</span><span class="sc11">self</span><span class="sc10">.</span><span class="sc11">Account</span><span class="sc10">[</span><span class="sc4">'acc'</span><span class="sc10">]</span><span class="sc0">
+        </span><span class="sc11">self</span><span class="sc10">.</span><span class="sc11">event</span><span class="sc10">.</span><span class="sc11">set</span><span class="sc10">()</span><span class="sc0">
+        </span><span class="sc11">self</span><span class="sc10">.</span><span class="sc11">timer</span><span class="sc10">.</span><span class="sc11">cancel</span><span class="sc10">()</span><span class="sc0">
+        </span><span class="sc5">try</span><span class="sc10">:</span><span class="sc0">
+            </span><span class="sc11">self</span><span class="sc10">.</span><span class="sc11">conn</span><span class="sc10">.</span><span class="sc11">close</span><span class="sc10">()</span><span class="sc0">
+            </span><span class="sc11">self</span><span class="sc10">.</span><span class="sc11">conn</span><span class="sc10">.</span><span class="sc11">logout</span><span class="sc10">()</span><span class="sc0">
+        </span><span class="sc5">except</span><span class="sc10">:</span><span class="sc0">
+            </span><span class="sc5">pass</span><span class="sc0">
+            
+        </span><span class="sc5">if</span><span class="sc0"> </span><span class="sc11">self</span><span class="sc10">.</span><span class="sc11">kill_received</span><span class="sc0"> </span><span class="sc5">is</span><span class="sc0"> </span><span class="sc11">False</span><span class="sc10">:</span><span class="sc0">
+            </span><span class="sc11">self</span><span class="sc10">.</span><span class="sc11">event</span><span class="sc10">.</span><span class="sc11">clear</span><span class="sc10">()</span><span class="sc0">
+            </span><span class="sc11">self</span><span class="sc10">.</span><span class="sc11">run</span><span class="sc10">()</span><span class="sc0">
+
+    </span><span class="sc5">def</span><span class="sc0"> </span><span class="sc9">run</span><span class="sc10">(</span><span class="sc11">self</span><span class="sc10">):</span><span class="sc0">
+        </span><span class="sc11">self</span><span class="sc10">.</span><span class="sc11">timer</span><span class="sc0"> </span><span class="sc10">=</span><span class="sc0"> </span><span class="sc11">threading</span><span class="sc10">.</span><span class="sc11">Timer</span><span class="sc10">(</span><span class="sc2">30</span><span class="sc10">*</span><span class="sc2">1</span><span class="sc10">,</span><span class="sc0"> </span><span class="sc11">self</span><span class="sc10">.</span><span class="sc11">stop</span><span class="sc10">)</span><span class="sc0">
+        </span><span class="sc11">self</span><span class="sc10">.</span><span class="sc11">timer</span><span class="sc10">.</span><span class="sc11">start</span><span class="sc10">();</span><span class="sc0">
+      
+        </span><span class="sc11">self</span><span class="sc10">.</span><span class="sc11">conn</span><span class="sc0"> </span><span class="sc10">=</span><span class="sc0"> </span><span class="sc11">imaplib2</span><span class="sc10">.</span><span class="sc11">IMAP4_SSL</span><span class="sc10">(</span><span class="sc11">self</span><span class="sc10">.</span><span class="sc11">Account</span><span class="sc10">[</span><span class="sc4">'server'</span><span class="sc10">],</span><span class="sc0"> </span><span class="sc11">self</span><span class="sc10">.</span><span class="sc11">Account</span><span class="sc10">[</span><span class="sc4">'port'</span><span class="sc10">])</span><span class="sc0">
+        </span><span class="sc11">self</span><span class="sc10">.</span><span class="sc11">conn</span><span class="sc10">.</span><span class="sc11">login</span><span class="sc10">(</span><span class="sc11">self</span><span class="sc10">.</span><span class="sc11">Account</span><span class="sc10">[</span><span class="sc4">'username'</span><span class="sc10">],</span><span class="sc0"> </span><span class="sc11">self</span><span class="sc10">.</span><span class="sc11">Account</span><span class="sc10">[</span><span class="sc4">'password'</span><span class="sc10">])</span><span class="sc0">
+        </span><span class="sc11">self</span><span class="sc10">.</span><span class="sc11">conn</span><span class="sc10">.</span><span class="sc11">select</span><span class="sc10">(</span><span class="sc3">"INBOX"</span><span class="sc10">)</span><span class="sc0">        
+
+        </span><span class="sc5">while</span><span class="sc0"> </span><span class="sc11">True</span><span class="sc10">:</span><span class="sc0">        
+            </span><span class="sc5">if</span><span class="sc0"> </span><span class="sc11">self</span><span class="sc10">.</span><span class="sc11">event</span><span class="sc10">.</span><span class="sc11">isSet</span><span class="sc10">():</span><span class="sc0">
+                </span><span class="sc5">break</span><span class="sc0">
+            </span><span class="sc11">self</span><span class="sc10">.</span><span class="sc11">hasMail</span><span class="sc0"> </span><span class="sc10">=</span><span class="sc0"> </span><span class="sc11">False</span><span class="sc0">
+
+            </span><span class="sc5">def</span><span class="sc0"> </span><span class="sc9">callback</span><span class="sc10">(</span><span class="sc11">args</span><span class="sc10">):</span><span class="sc0">
+                </span><span class="sc5">if</span><span class="sc0"> </span><span class="sc5">not</span><span class="sc0"> </span><span class="sc11">self</span><span class="sc10">.</span><span class="sc11">event</span><span class="sc10">.</span><span class="sc11">isSet</span><span class="sc10">():</span><span class="sc0">
+                    </span><span class="sc5">print</span><span class="sc0"> </span><span class="sc11">self</span><span class="sc10">.</span><span class="sc11">Account</span><span class="sc10">[</span><span class="sc4">'acc'</span><span class="sc10">]</span><span class="sc0"> </span><span class="sc10">+</span><span class="sc0"> </span><span class="sc3">": A new message has been received... "</span><span class="sc0"> </span><span class="sc10">+</span><span class="sc0"> </span><span class="sc11">time</span><span class="sc10">.</span><span class="sc11">strftime</span><span class="sc10">(</span><span class="sc3">"%m-%d-%Y %H:%M:%S"</span><span class="sc10">)</span><span class="sc0">
+                    </span><span class="sc11">self</span><span class="sc10">.</span><span class="sc11">hasMail</span><span class="sc0"> </span><span class="sc10">=</span><span class="sc0"> </span><span class="sc11">True</span><span class="sc0">
+                    </span><span class="sc11">self</span><span class="sc10">.</span><span class="sc11">event</span><span class="sc10">.</span><span class="sc11">set</span><span class="sc10">()</span><span class="sc0">
+
+            </span><span class="sc11">self</span><span class="sc10">.</span><span class="sc11">conn</span><span class="sc10">.</span><span class="sc11">idle</span><span class="sc10">(</span><span class="sc11">callback</span><span class="sc10">=</span><span class="sc11">callback</span><span class="sc10">)</span><span class="sc0">
+            </span><span class="sc5">print</span><span class="sc0"> </span><span class="sc11">self</span><span class="sc10">.</span><span class="sc11">Account</span><span class="sc10">[</span><span class="sc4">'acc'</span><span class="sc10">]</span><span class="sc0"> </span><span class="sc10">+</span><span class="sc0"> </span><span class="sc3">": Now in IMAP IDLE mode..."</span><span class="sc0">
+            </span><span class="sc11">self</span><span class="sc10">.</span><span class="sc11">event</span><span class="sc10">.</span><span class="sc11">wait</span><span class="sc10">()</span><span class="sc0">
+
+            </span><span class="sc5">if</span><span class="sc0"> </span><span class="sc11">self</span><span class="sc10">.</span><span class="sc11">hasMail</span><span class="sc10">:</span><span class="sc0">
+                </span><span class="sc11">self</span><span class="sc10">.</span><span class="sc11">event</span><span class="sc10">.</span><span class="sc11">clear</span><span class="sc10">()</span><span class="sc0">
+                </span><span class="sc11">self</span><span class="sc10">.</span><span class="sc11">trigger</span><span class="sc10">()</span><span class="sc0">
+        
+    </span><span class="sc5">def</span><span class="sc0"> </span><span class="sc9">trigger</span><span class="sc10">(</span><span class="sc11">self</span><span class="sc10">):</span><span class="sc0">
+        </span><span class="sc5">global</span><span class="sc0"> </span><span class="sc11">executing</span><span class="sc0">
+        </span><span class="sc1"># getmail trigger - allow only one getmail process at a time</span><span class="sc0">
+        </span><span class="sc5">while</span><span class="sc0"> </span><span class="sc11">executing</span><span class="sc0"> </span><span class="sc5">is</span><span class="sc0"> </span><span class="sc11">True</span><span class="sc10">:</span><span class="sc0">
+            </span><span class="sc11">time</span><span class="sc10">.</span><span class="sc11">sleep</span><span class="sc10">(</span><span class="sc2">1</span><span class="sc10">);</span><span class="sc0">
+        </span><span class="sc11">executing</span><span class="sc0"> </span><span class="sc10">=</span><span class="sc0"> </span><span class="sc11">True</span><span class="sc0">
+        </span><span class="sc5">print</span><span class="sc0"> </span><span class="sc11">self</span><span class="sc10">.</span><span class="sc11">Account</span><span class="sc10">[</span><span class="sc4">'acc'</span><span class="sc10">]</span><span class="sc0"> </span><span class="sc10">+</span><span class="sc0"> </span><span class="sc3">": triggering getmail"</span><span class="sc0"> </span><span class="sc10">+</span><span class="sc0"> </span><span class="sc11">time</span><span class="sc10">.</span><span class="sc11">strftime</span><span class="sc10">(</span><span class="sc3">"%m-%d-%Y %H:%M:%S"</span><span class="sc10">)</span><span class="sc0">
+        </span><span class="sc1">#os.system("sudo -u %s /usr/bin/getmail --getmaildir /home/%s/.getmail/ --rcfile %s" %(self.Account['getmailuser'], self.Account['getmailuser'], self.Account['getmailfile']))</span><span class="sc0">
+        </span><span class="sc11">executing</span><span class="sc0"> </span><span class="sc10">=</span><span class="sc0"> </span><span class="sc11">False</span><span class="sc0">
+
+</span><span class="sc5">def</span><span class="sc0"> </span><span class="sc9">load_config</span><span class="sc10">(</span><span class="sc11">cfg_file</span><span class="sc10">):</span><span class="sc0">
+    </span><span class="sc11">parser</span><span class="sc0"> </span><span class="sc10">=</span><span class="sc0"> </span><span class="sc11">SafeConfigParser</span><span class="sc10">()</span><span class="sc0">
+    </span><span class="sc11">parser</span><span class="sc10">.</span><span class="sc11">read</span><span class="sc10">(</span><span class="sc11">cfg_file</span><span class="sc10">)</span><span class="sc0">
+
+    </span><span class="sc11">accounts_config</span><span class="sc0"> </span><span class="sc10">=</span><span class="sc0"> </span><span class="sc10">[]</span><span class="sc0">
+    </span><span class="sc5">for</span><span class="sc0"> </span><span class="sc11">section_name</span><span class="sc0"> </span><span class="sc5">in</span><span class="sc0"> </span><span class="sc11">parser</span><span class="sc10">.</span><span class="sc11">sections</span><span class="sc10">():</span><span class="sc0">
+        </span><span class="sc11">cur</span><span class="sc0"> </span><span class="sc10">=</span><span class="sc0"> </span><span class="sc10">{}</span><span class="sc0">
+        </span><span class="sc11">cur</span><span class="sc10">[</span><span class="sc4">'acc'</span><span class="sc10">]</span><span class="sc0"> </span><span class="sc10">=</span><span class="sc0"> </span><span class="sc11">section_name</span><span class="sc0">
+        </span><span class="sc5">for</span><span class="sc0"> </span><span class="sc11">name</span><span class="sc10">,</span><span class="sc0"> </span><span class="sc11">value</span><span class="sc0"> </span><span class="sc5">in</span><span class="sc0"> </span><span class="sc11">parser</span><span class="sc10">.</span><span class="sc11">items</span><span class="sc10">(</span><span class="sc11">section_name</span><span class="sc10">):</span><span class="sc0">
+            </span><span class="sc11">cur</span><span class="sc10">[</span><span class="sc11">name</span><span class="sc10">]</span><span class="sc0"> </span><span class="sc10">=</span><span class="sc0"> </span><span class="sc11">value</span><span class="sc0">
+        </span><span class="sc11">accounts_config</span><span class="sc10">.</span><span class="sc11">append</span><span class="sc10">(</span><span class="sc11">cur</span><span class="sc10">)</span><span class="sc0">
+
+    </span><span class="sc5">return</span><span class="sc0"> </span><span class="sc11">accounts_config</span><span class="sc0">
+    
+</span><span class="sc5">def</span><span class="sc0"> </span><span class="sc9">onSignal</span><span class="sc10">(</span><span class="sc11">signum</span><span class="sc10">,</span><span class="sc0"> </span><span class="sc11">stackframe</span><span class="sc10">):</span><span class="sc0">
+    </span><span class="sc5">global</span><span class="sc0"> </span><span class="sc11">threads</span><span class="sc0">
+    </span><span class="sc5">for</span><span class="sc0"> </span><span class="sc11">t</span><span class="sc0"> </span><span class="sc5">in</span><span class="sc0"> </span><span class="sc11">threads</span><span class="sc10">:</span><span class="sc0">
+        </span><span class="sc11">t</span><span class="sc10">.</span><span class="sc11">kill_received</span><span class="sc0"> </span><span class="sc10">=</span><span class="sc0"> </span><span class="sc11">True</span><span class="sc0">
+        </span><span class="sc11">t</span><span class="sc10">.</span><span class="sc11">stop</span><span class="sc10">()</span><span class="sc0">
+        
+</span><span class="sc11">threads</span><span class="sc0"> </span><span class="sc10">=</span><span class="sc0"> </span><span class="sc10">[]</span><span class="sc0">
+</span><span class="sc5">def</span><span class="sc0"> </span><span class="sc9">main</span><span class="sc10">():</span><span class="sc0">
+    </span><span class="sc11">accounts</span><span class="sc0"> </span><span class="sc10">=</span><span class="sc0"> </span><span class="sc11">load_config</span><span class="sc10">(</span><span class="sc4">'accounts.ini'</span><span class="sc10">)</span><span class="sc0">
+    </span><span class="sc11">signal</span><span class="sc10">.</span><span class="sc11">signal</span><span class="sc10">(</span><span class="sc2">15</span><span class="sc10">,</span><span class="sc0"> </span><span class="sc11">onSignal</span><span class="sc10">)</span><span class="sc0"> </span><span class="sc1"># 15 = default start-stop-daemon STOP-Signal</span><span class="sc0">
+    
+    </span><span class="sc5">for</span><span class="sc0"> </span><span class="sc11">account</span><span class="sc0"> </span><span class="sc5">in</span><span class="sc0"> </span><span class="sc11">accounts</span><span class="sc10">:</span><span class="sc0">
+        </span><span class="sc11">t</span><span class="sc0"> </span><span class="sc10">=</span><span class="sc0"> </span><span class="sc11">Idler</span><span class="sc10">(</span><span class="sc11">account</span><span class="sc10">)</span><span class="sc0">
+        </span><span class="sc11">threads</span><span class="sc10">.</span><span class="sc11">append</span><span class="sc10">(</span><span class="sc11">t</span><span class="sc10">)</span><span class="sc0">
+        </span><span class="sc11">time</span><span class="sc10">.</span><span class="sc11">sleep</span><span class="sc10">(</span><span class="sc2">1</span><span class="sc10">)</span><span class="sc0">
+
+    </span><span class="sc5">while</span><span class="sc0"> </span><span class="sc11">len</span><span class="sc10">(</span><span class="sc11">threads</span><span class="sc10">)</span><span class="sc0"> </span><span class="sc10">&gt;</span><span class="sc0"> </span><span class="sc2">0</span><span class="sc10">:</span><span class="sc0">
+        </span><span class="sc5">try</span><span class="sc10">:</span><span class="sc0">
+            </span><span class="sc11">time</span><span class="sc10">.</span><span class="sc11">sleep</span><span class="sc10">(</span><span class="sc2">1</span><span class="sc10">)</span><span class="sc0">
+        </span><span class="sc5">except</span><span class="sc0"> </span><span class="sc11">KeyboardInterrupt</span><span class="sc10">:</span><span class="sc0">
+            </span><span class="sc5">for</span><span class="sc0"> </span><span class="sc11">t</span><span class="sc0"> </span><span class="sc5">in</span><span class="sc0"> </span><span class="sc11">threads</span><span class="sc10">:</span><span class="sc0">
+                </span><span class="sc11">t</span><span class="sc10">.</span><span class="sc11">kill_received</span><span class="sc0"> </span><span class="sc10">=</span><span class="sc0"> </span><span class="sc11">True</span><span class="sc0">
+                </span><span class="sc11">t</span><span class="sc10">.</span><span class="sc11">stop</span><span class="sc10">()</span><span class="sc0">
+            </span><span class="sc5">break</span><span class="sc0">
+
+</span><span class="sc5">if</span><span class="sc0"> </span><span class="sc11">__name__</span><span class="sc0"> </span><span class="sc10">==</span><span class="sc0"> </span><span class="sc4">'__main__'</span><span class="sc10">:</span><span class="sc0">
+    </span><span class="sc11">main</span><span class="sc10">()</span></div></body>
+</html>

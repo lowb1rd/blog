@@ -1,0 +1,16 @@
+#!/usr/bin/php
+<?php
+
+chdir(__DIR__.'/../');
+require '_.php';
+define('DEVELOP', php_uname("n") == 'webserver');
+
+# Go
+_::Request()->setEnv(
+    'import',
+    'index',
+    array()
+);
+
+_::Controller()->go();
+ 

@@ -1,0 +1,442 @@
+From 080fc668d7f230a085a43b2e6fb94e8bcf08a74a Mon Sep 17 00:00:00 2001
+From: lowb1rd <lowb1rd@mail.acme-labs.de>
+Date: Fri, 6 Jan 2012 12:24:32 +0100
+Subject: [PATCH] IPv6
+
+---
+ admin_domains.php                                  |   17 +---
+ admin_ipsandports.php                              |   18 ++--
+ .../froxlor/function.getIpPortCombinations.php     |    7 +--
+ lib/functions/validate/function.validate_ip.php    |   30 ++++++-
+ scripts/jobs/cron_tasks.inc.dns.10.bind.php        |   93 +++++++++++++++-----
+ scripts/jobs/cron_tasks.inc.http.10.apache.php     |   42 +++++----
+ .../admin/ipsandports/ipsandports_ipandport.tpl    |    2 +-
+ .../admin/ipsandports/ipsandports_ipandport.tpl    |    2 +-
+ 8 files changed, 138 insertions(+), 73 deletions(-)
+
+diff --git a/admin_domains.php b/admin_domains.php
+index c1a4880..56c05bf 100644
+--- a/admin_domains.php
++++ b/admin_domains.php
+@@ -70,14 +70,7 @@ if($page == 'domains'
+ 			$row['domain'] = $idna_convert->decode($row['domain']);
+ 			$row['aliasdomain'] = $idna_convert->decode($row['aliasdomain']);
+ 
+-			if(filter_var($row['ip'], FILTER_VALIDATE_IP, FILTER_FLAG_IPV6))
+-			{
+-				$row['ipandport'] = '[' . $row['ip'] . ']:' . $row['port'];
+-			}
+-			else
+-			{
+-				$row['ipandport'] = $row['ip'] . ':' . $row['port'];
+-			}
++			$row['ipandport'] = format_ipport($row['ip'], $row['port']);
+ 
+ 			if(!isset($domain_array[$row['domain']]))
+ 			{
+@@ -627,7 +620,7 @@ if($page == 'domains'
+ 						$row_ipandport['ip'] = '[' . $row_ipandport['ip'] . ']';
+ 					}
+ 
+-					$ipsandports.= makeoption($row_ipandport['ip'] . ':' . $row_ipandport['port'], $row_ipandport['id'], $settings['system']['defaultip']);
++					$ipsandports.= makeoption(format_ipport($row_ipandport['ip'], $row_ipandport['port']), $row_ipandport['id'], $settings['system']['defaultip']);
+ 				}
+ 
+ 				$ssl_ipsandports = '';
+@@ -639,7 +632,7 @@ if($page == 'domains'
+ 						$row_ssl_ipandport['ip'] = '[' . $row_ssl_ipandport['ip'] . ']';
+ 					}
+ 
+-					$ssl_ipsandports.= makeoption($row_ssl_ipandport['ip'] . ':' . $row_ssl_ipandport['port'], $row_ssl_ipandport['id'], $settings['system']['defaultip']);
++					$ssl_ipsandports.= makeoption(format_ipport($row_ssl_ipandport['ip'], $row_ssl_ipandport['port']), $row_ssl_ipandport['id'], $settings['system']['defaultip']);
+ 				}
+ 
+ 				$standardsubdomains = array();
+@@ -1212,7 +1205,7 @@ if($page == 'domains'
+ 						$row_ipandport['ip'] = '[' . $row_ipandport['ip'] . ']';
+ 					}
+ 
+-					$ipsandports.= makeoption($row_ipandport['ip'] . ':' . $row_ipandport['port'], $row_ipandport['id'], $result['ipandport']);
++					$ipsandports.= makeoption(format_ipport($row_ipandport['ip'], $row_ipandport['port']), $row_ipandport['id'], $result['ipandport']);
+ 				}
+ 
+ 				$ssl_ipsandports = '';
+@@ -1224,7 +1217,7 @@ if($page == 'domains'
+ 						$row_ssl_ipandport['ip'] = '[' . $row_ssl_ipandport['ip'] . ']';
+ 					}
+ 
+-					$ssl_ipsandports.= makeoption($row_ssl_ipandport['ip'] . ':' . $row_ssl_ipandport['port'], $row_ssl_ipandport['id'], $result['ssl_ipandport']);
++					$ssl_ipsandports.= makeoption(format_ipport($row_ssl_ipandport['ip'], $row_ssl_ipandport['port']), $row_ssl_ipandport['id'], $result['ssl_ipandport']);
+ 				}
+ 
+ 				$result['specialsettings'] = $result['specialsettings'];
+diff --git a/admin_ipsandports.php b/admin_ipsandports.php
+index be6a314..b7674dd 100644
+--- a/admin_ipsandports.php
++++ b/admin_ipsandports.php
+@@ -61,10 +61,8 @@ if($page == 'ipsandports'
+ 			{
+ 				$row = htmlentities_array($row);
+ 
+-				if(filter_var($row['ip'], FILTER_VALIDATE_IP, FILTER_FLAG_IPV6))
+-				{
+-					$row['ip'] = '[' . $row['ip'] . ']';
+-				}
++				$row['ipport'] = format_ipport($row['ip'], $row['port']);
++
+ 
+ 				eval("\$ipsandports.=\"" . getTemplate("ipsandports/ipsandports_ipandport") . "\";");
+ 				$count++;
+@@ -243,12 +241,9 @@ if($page == 'ipsandports'
+ 						`docroot` = '" . $db->escape($docroot) . "';
+ 					");
+ 
+-				if(filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6))
+-				{
+-					$ip = '[' . $ip . ']';
+-				}
++				$ip = format_ipport($ip, $port);
+ 
+-				$log->logAction(ADM_ACTION, LOG_WARNING, "added IP/port '" . $ip . ":" . $port . "'");
++				$log->logAction(ADM_ACTION, LOG_WARNING, "added IP/port '" . $ip);
+ 				inserttask('1');
+ 
+ 				# Using nameserver, insert a task which rebuilds the server config
+@@ -399,7 +394,10 @@ if($page == 'ipsandports'
+ 					WHERE `id`='" . (int)$id . "'
+ 					");
+ 
+-					$log->logAction(ADM_ACTION, LOG_WARNING, "changed IP/port from '" . $result['ip'] . ":" . $result['port'] . "' to '" . $ip . ":" . $port . "'");
++					$ip_from = format_ipport($result['ip'], $result['port']);
++					$ip_to = format_ipport($ip, $port);
++
++					$log->logAction(ADM_ACTION, LOG_WARNING, "changed IP/port from '" . $ip_from . "' to '" . $ip_to . "'");
+ 					inserttask('1');
+ 
+ 					# Using nameserver, insert a task which rebuilds the server config
+diff --git a/lib/functions/froxlor/function.getIpPortCombinations.php b/lib/functions/froxlor/function.getIpPortCombinations.php
+index dad987f..0238ca1 100644
+--- a/lib/functions/froxlor/function.getIpPortCombinations.php
++++ b/lib/functions/froxlor/function.getIpPortCombinations.php
+@@ -44,12 +44,7 @@ function getIpPortCombinations($ssl = null)
+ 
+ 	while($row = $db->fetch_array($result))
+ 	{
+-		if(filter_var($row['ip'], FILTER_VALIDATE_IP, FILTER_FLAG_IPV6))
+-		{
+-				$row['ip'] = '[' . $row['ip'] . ']';
+-		}
+-
+-		$system_ipaddress_array[$row['id']] = $row['ip'] . ':' . $row['port'];
++		$system_ipaddress_array[$row['id']] = format_ipport($row['ip'], $row['port']);
+ 	}
+ 	
+ 	return $system_ipaddress_array;
+diff --git a/lib/functions/validate/function.validate_ip.php b/lib/functions/validate/function.validate_ip.php
+index 8381f10..eb9f0aa 100644
+--- a/lib/functions/validate/function.validate_ip.php
++++ b/lib/functions/validate/function.validate_ip.php
+@@ -25,9 +25,20 @@
+ 
+ function validate_ip($ip, $return_bool = false, $lng = 'invalidip')
+ {
+-	if(filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6) === FALSE
+-	   && filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) === FALSE
+-	   && filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_RES_RANGE) === FALSE)
++	$valid = false;
++	$ip = trim($ip);
++	if (strpos($ip, ' '))
++	{
++		list($ip4, $ip6) = explode(' ', $ip);
++		$valid = filter_var($ip4, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) 
++			&& filter_var($ip6, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6);
++	} 
++	else
++	{
++		$valid = filter_var($ip6, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4);
++	}
++
++	if(!$valid)
+ 	{
+ 		if($return_bool)
+ 		{
+@@ -44,3 +55,16 @@ function validate_ip($ip, $return_bool = false, $lng = 'invalidip')
+ 		return $ip;
+ 	}
+ }
++
++function format_ipport($ip, $port) {
++	$ip = trim($ip);
++	if (strpos($ip, ' '))
++	{
++		list($ip4, $ip6) = explode(' ', $ip);
++		return "$ip4:$port [$ip6]:$port";
++	} 
++	else 
++	{
++		return "$ip:$port";
++	}
++}
+diff --git a/scripts/jobs/cron_tasks.inc.dns.10.bind.php b/scripts/jobs/cron_tasks.inc.dns.10.bind.php
+index f4d4a04..716dc5b 100644
+--- a/scripts/jobs/cron_tasks.inc.dns.10.bind.php
++++ b/scripts/jobs/cron_tasks.inc.dns.10.bind.php
+@@ -167,17 +167,34 @@ class bind
+ 
+ 	protected function generateZone($domain)
+ 	{
+-		if(filter_var($domain['ip'], FILTER_VALIDATE_IP, FILTER_FLAG_IPV4))
++		$dualstack = false;
++		if (strpos($domain['ip'], ' '))
+ 		{
+-			$ip_a_record = 'A	' . $domain['ip'];
+-		}
+-		elseif(filter_var($domain['ip'], FILTER_VALIDATE_IP, FILTER_FLAG_IPV6))
+-		{
+-			$ip_a_record = 'AAAA	' . $domain['ip'];
++			list($ip4, $ip6) = explode(' ', $domain['ip']);
++			if (!filter_var($ip4, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)
++				|| !filter_var($ip6, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6))
++			{
++				return '';
++			}
++			
++			$ip_a_record = 'A	' . $ip4;
++			$dualstack = 'AAAA	' . $ip6;
++			
+ 		}
+-		else
++		else 
+ 		{
+-			return '';
++			if(filter_var($domain['ip'], FILTER_VALIDATE_IP, FILTER_FLAG_IPV4))
++			{
++				$ip_a_record = 'A	' . $domain['ip'];
++			}
++			elseif(filter_var($domain['ip'], FILTER_VALIDATE_IP, FILTER_FLAG_IPV6))
++			{
++				$ip_a_record = 'AAAA	' . $domain['ip'];
++			}
++			else
++			{
++				return '';
++			}
+ 		}
+ 
+ 		$date = date('Ymd');
+@@ -199,6 +216,7 @@ class bind
+ 		if(count($this->nameservers) == 0)
+ 		{
+ 			$zonefile.= '@	IN	NS	ns' . "\n" . 'ns	IN	' . $ip_a_record . "\n";
++			if ($dualstack) $zonefile .= "ns	IN	$dualstack\n";
+ 		}
+ 		else
+ 		{
+@@ -212,11 +230,18 @@ class bind
+ 		{
+ 			$zonefile.= '@	IN	MX	10 mail' . "\n";
+ 			$zonefile.= 'mail	IN	' . $ip_a_record . "\n";
++			if ($dualstack) $zonefile .= "mail	IN	$dualstack\n";
+ 			if($domain['iswildcarddomain'] != '1')
+ 			{
+ 				$zonefile.= 'imap	IN	' . $ip_a_record . "\n";
+ 				$zonefile.= 'smtp	IN	' . $ip_a_record . "\n";
+ 				$zonefile.= 'pop3	IN	' . $ip_a_record . "\n";
++				if ($dualstack)
++				{
++					$zonefile.= 'imap	IN	' . $dualstack . "\n";
++					$zonefile.= 'smtp	IN	' . $dualstack . "\n";
++					$zonefile.= 'pop3	IN	' . $dualstack . "\n";
++				}
+ 			}
+ 		}
+ 		else
+@@ -229,11 +254,18 @@ class bind
+ 			if($this->settings['system']['dns_createmailentry'] == '1')
+ 			{
+ 				$zonefile.= 'mail	IN	' . $ip_a_record . "\n";
++                if ($dualstack) $zonefile .= "mail IN $dualstack\n";
+ 				if($domain['iswildcarddomain'] != '1')
+ 				{
+ 					$zonefile.= 'imap	IN	' . $ip_a_record . "\n";
+ 					$zonefile.= 'smtp	IN	' . $ip_a_record . "\n";
+ 					$zonefile.= 'pop3	IN	' . $ip_a_record . "\n";
++					if ($dualstack)
++					{
++						$zonefile.= 'imap	IN	' . $dualstack . "\n";
++						$zonefile.= 'smtp	IN	' . $dualstack . "\n";
++					$zonefile.= 'pop3	IN	' . $dualstack . "\n";
++					}
+ 				}
+ 			}
+ 		}
+@@ -275,37 +307,56 @@ class bind
+ 		}
+ 
+ 		$zonefile.= '@	IN	' . $ip_a_record . "\n";
++		if ($dualstack) $zonefile .= "@	IN	$dualstack\n";
+ 		$zonefile.= 'www	IN	' . $ip_a_record . "\n";
++		if ($dualstack) $zonefile .= "www	IN	$dualstack\n";
+ 
+ 		if($domain['iswildcarddomain'] == '1')
+ 		{
+ 			$zonefile.= '*	IN      ' . $ip_a_record . "\n";
++			if ($dualstack) $zonefile .= "*	IN	$dualstack\n";
+ 		}
+ 
+ 		$subdomains = $this->db->query('SELECT `d`.`domain`, `ip`.`ip` AS `ip` FROM `' . TABLE_PANEL_DOMAINS . '` `d`, `' . TABLE_PANEL_IPSANDPORTS . '` `ip` WHERE `parentdomainid`=\'' . $domain['id'] . '\' AND `d`.`ipandport`=`ip`.`id`');
+ 
+ 		while($subdomain = $this->db->fetch_array($subdomains))
+ 		{
+-                        if(filter_var($subdomain['ip'], FILTER_VALIDATE_IP, FILTER_FLAG_IPV4))
+-                        {
+-                                $zonefile.= str_replace('.' . $domain['domain'], '', $subdomain['domain']) . '  IN      A       ' . $subdomain['ip'] . "\n";
+-                                
+-                                /* Check whether to add a www.-prefix */
+-                                if($domain['wwwserveralias'] == '1')
++			$ip4 = $ip6 = false;
++			if (strpos($domain['ip'], ' '))
++			{
++				list($ip4, $ip6) = explode(' ', $subdomain['ip']);
++			} 
++			else
++			{
++				if (filter_var($subdomain['ip'], FILTER_VALIDATE_IP, FILTER_FLAG_IPV4))
++				{
++					$ip4 = $subdomain['ip'];
++				}
++ 				elseif (filter_var($subdomain['ip'], FILTER_VALIDATE_IP, FILTER_FLAG_IPV6))
++				{
++					$ip6 = $subdomain['ip'];
++				}
++			}
++						if(filter_var($ip4, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4))
++						{
++								$zonefile.= str_replace('.' . $domain['domain'], '', $subdomain['domain']) . '  IN      A       ' . $subdomain['ip'] . "\n";
++
++								/* Check whether to add a www.-prefix */
++								if($domain['wwwserveralias'] == '1')
+ 								{
+ 									$zonefile.= str_replace('www.' . $domain['domain'], '', $subdomain['domain']) . '  IN      A       ' . $subdomain['ip'] . "\n";
+ 								}
+-                        }
+-                        elseif(filter_var($domain['ip'], FILTER_VALIDATE_IP, FILTER_FLAG_IPV6))
+-                        {
+-                                $zonefile.= str_replace('.' . $domain['domain'], '', $subdomain['domain']) . '  IN      AAAA    ' . $subdomain['ip'] . "\n";
+-                                
++						}
++						if(filter_var($ip6, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6))
++						{
++								$zonefile.= str_replace('.' . $domain['domain'], '', $subdomain['domain']) . '  IN      AAAA    ' . $subdomain['ip'] . "\n";
++
+ 								/* Check whether to add a www.-prefix */
+-                                if($domain['wwwserveralias'] == '1')
++								if($domain['wwwserveralias'] == '1')
+ 								{
+ 									$zonefile.= str_replace('www.' . $domain['domain'], '', $subdomain['domain']) . '  IN      AAAA       ' . $subdomain['ip'] . "\n";
+ 								}
+-                        }
++						}
+ 		}
+ 
+ 		return $zonefile;
+diff --git a/scripts/jobs/cron_tasks.inc.http.10.apache.php b/scripts/jobs/cron_tasks.inc.http.10.apache.php
+index 2d0cc7a..92a7575 100644
+--- a/scripts/jobs/cron_tasks.inc.http.10.apache.php
++++ b/scripts/jobs/cron_tasks.inc.http.10.apache.php
+@@ -170,18 +170,11 @@ class apache
+ 
+ 		while($row_ipsandports = $this->db->fetch_array($result_ipsandports))
+ 		{
+-			if(filter_var($row_ipsandports['ip'], FILTER_VALIDATE_IP, FILTER_FLAG_IPV6))
+-			{
+-				$ipport = '[' . $row_ipsandports['ip'] . ']:' . $row_ipsandports['port'];
+-			}
+-			else
+-			{
+-				$ipport = $row_ipsandports['ip'] . ':' . $row_ipsandports['port'];
+-			}
++			$ipport = format_ipport($row_ipsandports['ip'], $row_ipsandports['port']);
+ 
+ 			fwrite($this->debugHandler, '  apache::createIpPort: creating ip/port settings for  ' . $ipport . "\n");
+ 			$this->logger->logAction(CRON_ACTION, LOG_INFO, 'creating ip/port settings for  ' . $ipport);
+-			$vhosts_filename = makeCorrectFile($this->settings['system']['apacheconf_vhost'] . '/10_froxlor_ipandport_' . trim(str_replace(':', '.', $row_ipsandports['ip']), '.') . '.' . $row_ipsandports['port'] . '.conf');
++			$vhosts_filename = makeCorrectFile($this->settings['system']['apacheconf_vhost'] . '/10_froxlor_ipandport_' . trim(str_replace(array(':', ' '), array('.', '_'), $row_ipsandports['ip']), '.') . '.' . $row_ipsandports['port'] . '.conf');
+ 
+ 			if(!isset($this->virtualhosts_data[$vhosts_filename]))
+ 			{
+@@ -190,13 +183,31 @@ class apache
+ 
+ 			if($row_ipsandports['listen_statement'] == '1')
+ 			{
+-				$this->virtualhosts_data[$vhosts_filename].= 'Listen ' . $ipport . "\n";
++				if (strpos($ipport, ' ')) 
++				{
++					list($ip4, $ip6) = explode(' ', $ipport);
++					$this->virtualhosts_data[$vhosts_filename].= 'Listen ' . $ip4 . "\n";
++					$this->virtualhosts_data[$vhosts_filename].= 'Listen ' . $ip6 . "\n";
++				} 
++				else 
++				{
++					$this->virtualhosts_data[$vhosts_filename].= 'Listen ' . $ipport . "\n";
++				}
+ 				$this->logger->logAction(CRON_ACTION, LOG_DEBUG, $ipport . ' :: inserted listen-statement');
+ 			}
+ 
+ 			if($row_ipsandports['namevirtualhost_statement'] == '1')
+ 			{
+-				$this->virtualhosts_data[$vhosts_filename].= 'NameVirtualHost ' . $ipport . "\n";
++				if (strpos($ipport, ' ')) 
++				{
++					list($ip4, $ip6) = explode(' ', $ipport);
++					$this->virtualhosts_data[$vhosts_filename].= 'NameVirtualHost ' . $ip4 . "\n";
++					$this->virtualhosts_data[$vhosts_filename].= 'NameVirtualHost ' . $ip6 . "\n";
++				} 
++				else 
++				{
++					$this->virtualhosts_data[$vhosts_filename].= 'NameVirtualHost ' . $ipport . "\n";
++				}
+ 				$this->logger->logAction(CRON_ACTION, LOG_DEBUG, $ipport . ' :: inserted namevirtualhost-statement');
+ 			}
+ 
+@@ -742,14 +753,7 @@ class apache
+ 		// #418
+ 		$domain['ssl_cert_chainfile'] = $ipandport['ssl_cert_chainfile'];
+ 
+-		if(filter_var($domain['ip'], FILTER_VALIDATE_IP, FILTER_FLAG_IPV6))
+-		{
+-			$ipport = '[' . $domain['ip'] . ']:' . $domain['port'];
+-		}
+-		else
+-		{
+-			$ipport = $domain['ip'] . ':' . $domain['port'];
+-		}
++		$ipport = format_ipport($ipandport['ip'], $ipandport['port']);
+ 
+ 		$vhost_content = '<VirtualHost ' . $ipport . '>' . "\n";
+ 		$vhost_content.= $this->getServerNames($domain);
+diff --git a/templates/Classic/admin/ipsandports/ipsandports_ipandport.tpl b/templates/Classic/admin/ipsandports/ipsandports_ipandport.tpl
+index 5543f6e..8c74563 100644
+--- a/templates/Classic/admin/ipsandports/ipsandports_ipandport.tpl
++++ b/templates/Classic/admin/ipsandports/ipsandports_ipandport.tpl
+@@ -1,5 +1,5 @@
+ <tr class="" onmouseover="this.className='RowOverSelected';" onmouseout="this.className='';">
+-	<td class="field_name_border_left"><font size="-1">{$row['ip']}:{$row['port']}</font></td>
++	<td class="field_name_border_left"><font size="-1">{$row['ipport']}</font></td>
+ 	<td class="field_name"><font size="-1"><if $row['listen_statement']=='1'>{$lng['panel']['yes']}<else>{$lng['panel']['no']}</if></font></td>
+ 	<td class="field_name"><font size="-1"><if $row['namevirtualhost_statement']=='1'>{$lng['panel']['yes']}<else>{$lng['panel']['no']}</if></font></td>
+ 	<td class="field_name"><font size="-1"><if $row['vhostcontainer']=='1'>{$lng['panel']['yes']}<else>{$lng['panel']['no']}</if></font></td>
+diff --git a/templates/Froxlor/admin/ipsandports/ipsandports_ipandport.tpl b/templates/Froxlor/admin/ipsandports/ipsandports_ipandport.tpl
+index 11bc890..196ecbf 100644
+--- a/templates/Froxlor/admin/ipsandports/ipsandports_ipandport.tpl
++++ b/templates/Froxlor/admin/ipsandports/ipsandports_ipandport.tpl
+@@ -1,5 +1,5 @@
+ <tr>
+-	<td>{$row['ip']}:{$row['port']}</td>
++	<td>{$row['ipport']}</td>
+ 	<td><if $row['listen_statement']=='1'>{$lng['panel']['yes']}<else>{$lng['panel']['no']}</if></td>
+ 	<td><if $row['namevirtualhost_statement']=='1'>{$lng['panel']['yes']}<else>{$lng['panel']['no']}</if></td>
+ 	<td><if $row['vhostcontainer']=='1'>{$lng['panel']['yes']}<else>{$lng['panel']['no']}</if></td>
+-- 
+1.7.3.1
+

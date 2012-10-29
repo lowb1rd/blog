@@ -43,7 +43,7 @@ class Data {
         }
         
         // Load Content    
-        $this->content = ss($this->raw, $header_end);
+        $this->content = trim(ss($this->raw, $header_end));
 
         if ($this->getHeader('featured')) {
             $this->featured = true;
@@ -68,8 +68,10 @@ class Data {
         if ($key == 'excerpt' && !isset($this->header[$key])) {
             // Excerpt        
             $excerpt = strip_tags(markdown($this->content));
-            if (len($excerpt) > 100) {
-                $excerpt = ss($excerpt, 0, 100) . '&hellip;';
+            if (len($excerpt) > 220) {
+                $pos = strpos($excerpt, ' ', 220);
+                if ($pos === false) $pos = 220;
+                $excerpt = ss($excerpt, 0, $pos) . '&hellip;';
             }
             return $excerpt;            
         }
@@ -133,8 +135,8 @@ class Data {
                 );
             }
         }
-        
-        return $comments;
+
+        return $comments; 
     }
     public function setHeader($key, $value) {
         $this->modified = true;
@@ -142,7 +144,7 @@ class Data {
     }
     public function setContent($value) {
         $this->modified = true;
-        $this->content = $value;        
+        $this->content = trim($value);        
     }
     public function rename($uri) {
         rename($this->file, $file = 'data/'.$this->type . 's/' . $uri . '.md');
@@ -154,12 +156,13 @@ class Data {
         if ($this->modified) {
             $out = "---\n";
             foreach ($this->header as $k => $v) {
+                if ($k == 'date' && $v == 'now') $v = date('Y-m-d H:i:s');
                 if ($k == 'last_updated') $out .= "\n";
                 $out .= "$k: $v\n";
             }
-            $out .= "---\n";
+            $out .= "---\n\n";
             
-            $out .= $this->content;
+            $out .= trim($this->content); 
             
             $this->raw = $out;
             file_put_contents($this->file, $out);

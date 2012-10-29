@@ -1,8 +1,12 @@
 - Content-Seiten
 - Archiv
 - Sidebar
-- Kommentare
 - RSS
 - Bilder im Post
 - Syntax HL
+- Kommentare
+- wordpress redirect
+- IE678 test
 
+- List Preview
+- Apache -> lighty fastcgi (rewrite rules?`)

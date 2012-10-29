@@ -86,7 +86,9 @@ body > aside ul li {
     font-family: arial;
     margin-left: 10px;
 }
-
+body > aside ul li:before {
+    content: '- ';
+}
 body > footer {
     text-align: center;
     font-size: .8em;
@@ -107,7 +109,7 @@ em {
     color: #666;
 }
 strong {
-    color: #999;
+    xcolor: #999;
 }
 h1 {
     font-size: 30px;
@@ -119,13 +121,14 @@ h1 {
 }
 h2 {
     font-size: 20px;
-    font-weight: normal;
     letter-spacing: -0.03em;
     margin: 25px 0 15px;
 }
 h3 {
-    font-size: 15px;
+    xfont-size: 15px;
+    border-bottom: 1px dashed #666;
     margin: 25px 0 10px;
+    font-weight: normal;
 }
 article {
     margin: 1em 0 2em;
@@ -139,6 +142,26 @@ article h1 a {
 }
 article p {
     margin-bottom: 1em;
+}
+article ul {
+    margin-left: 1em;
+    margin-bottom: 1em;
+    list-style-type: circle;
+}
+article p:nth-child(3),
+article img:nth-child(3) {
+    margin-top: 1em;
+}
+article aside {
+    padding: 1em;
+    background: #f6f6f6;
+    font-size: .8em;
+}
+article aside article h1 {
+    font-size: 1.5em;
+}
+article aside article p:nth-child(3){
+    margin-top: 0;
 }
 /* Forms
 ========================================================== */
@@ -174,14 +197,17 @@ ul.breadcrumb li {
 ul.breadcrumb li:not(:last-child):after {
     content: " » ";
 }
+time {
+    line-height: 36px;
+}
 ol {
     margin-left: 1.5em;
 }
-ol li:nth-child(odd) {
+pre ol li:nth-child(odd) {
     background: #f4f4f4;
 }
 pre {
     margin-bottom: 1.5em;
     margin-left: 1em;
-    white-space: pre;
+    white-space: pre-wrap;
 }

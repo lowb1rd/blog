@@ -1,0 +1,249 @@
+From 865af51ab09039cf95efe89486c3a78727859076 Mon Sep 17 00:00:00 2001
+From: nkr <nkr@awares.de>
+Date: Fri, 25 Feb 2011 23:47:23 +0100
+Subject: [PATCH] Versandkosten im Warenkorb
+
+---
+ create_account.php                       |    2 +
+ create_guest_account.php                 |    2 +
+ includes/cart_actions.php                |    5 ++
+ includes/classes/xtcPrice.php            |    8 ++-
+ includes/modules/order_details_cart.php  |    5 ++
+ includes/shipping_estimate.php           |  108 ++++++++++++++++++++++++++++++
+ templates/xtc5/module/order_details.html |   24 ++++++-
+ 7 files changed, 150 insertions(+), 4 deletions(-)
+ create mode 100644 includes/shipping_estimate.php
+
+diff --git a/create_account.php b/create_account.php
+index 97c5320..b84e0bd 100644
+--- a/create_account.php
++++ b/create_account.php
+@@ -514,6 +514,8 @@ if (ACCOUNT_STATE == 'true') {
+ 
+ if (isset($_POST['country'])) {
+ 	$selected = $_POST['country'];
++} else if (isset($_SESSION['country'])) {
++    $selected = $_SESSION['country'];
+ } else {
+ 	$selected = STORE_COUNTRY;
+ }
+diff --git a/create_guest_account.php b/create_guest_account.php
+index 383ab72..21b9cca 100644
+--- a/create_guest_account.php
++++ b/create_guest_account.php
+@@ -434,6 +434,8 @@ if (ACCOUNT_STATE == 'true') {
+ 
+ if (isset($_POST['country'])) {
+ 	$selected = $_POST['country'];
++} else if (isset($_SESSION['country'])) {
++    $selected = $_SESSION['country'];
+ } else {
+ 	$selected = STORE_COUNTRY;
+ }
+diff --git a/includes/cart_actions.php b/includes/cart_actions.php
+index a61a838..a9cc715 100644
+--- a/includes/cart_actions.php
++++ b/includes/cart_actions.php
+@@ -75,6 +75,11 @@ if (isset ($_GET['action'])) {
+ 	
+ 		// customer wants to update the product quantity in their shopping cart
+ 		case 'update_product' :
++            // Versandkosten im Warenkorb
++            if (isset($_POST['country'])) {
++                $_SESSION['country'] = xtc_remove_non_numeric($_POST['country']);
++            }
++            //-
+ 
+ 			if (is_object($econda))
+ 				$econda->_emptyCart();
+diff --git a/includes/classes/xtcPrice.php b/includes/classes/xtcPrice.php
+index 8795d2b..d3542f8 100644
+--- a/includes/classes/xtcPrice.php
++++ b/includes/classes/xtcPrice.php
+@@ -70,7 +70,13 @@ class xtcPrice {
+       		$tax_address = xtc_db_fetch_array($tax_address_query);
+ 			$this->TAX[$zones_data['class']]=xtc_get_tax_rate($zones_data['class'],$tax_address['entry_country_id'], $tax_address['entry_zone_id']);
+ 			} else {
+-			$this->TAX[$zones_data['class']]=xtc_get_tax_rate($zones_data['class']);
++                // Versandkosten im Warenkorb
++                $country_id = -1;
++                if (isset($_SESSION['country']) && !isset($_SESSION['customer_id'])) {
++                    $country_id = $_SESSION['country'];
++                }
++                $this->TAX[$zones_data['class']]=xtc_get_tax_rate($zones_data['class'], $country_id);	
++                //-
+ 			}
+ 
+ 
+diff --git a/includes/modules/order_details_cart.php b/includes/modules/order_details_cart.php
+index a08dabf..88bf594 100644
+--- a/includes/modules/order_details_cart.php
++++ b/includes/modules/order_details_cart.php
+@@ -138,6 +138,11 @@ if (SHOW_SHIPPING == 'true') {
+ if ($_SESSION['customers_status']['customers_status_show_price'] == '1') {
+ $module_smarty->assign('UST_CONTENT', $_SESSION['cart']->show_tax());
+ }
++
++// Versandkosten im Warenkorb
++include DIR_FS_CATALOG.'/includes/shipping_estimate.php';
++//-
++
+ $module_smarty->assign('TOTAL_CONTENT', $total_content);
+ $module_smarty->assign('language', $_SESSION['language']);
+ $module_smarty->assign('module_content', $module_content);
+diff --git a/includes/shipping_estimate.php b/includes/shipping_estimate.php
+new file mode 100644
+index 0000000..5444f9e
+--- /dev/null
++++ b/includes/shipping_estimate.php
+@@ -0,0 +1,108 @@
++<?php
++// http://neunzehn83.de/blog/2011/03/09/xtc-land-dropdown-im-warenkorb/
++// http://www.xtc-modified.org/forum/topic.php?id=9883
++
++require_once (DIR_WS_CLASSES.'order.php');
++require_once (DIR_FS_INC.'xtc_get_country_list.inc.php');
++
++$order = new order();
++$total_weight = $_SESSION['cart']->show_weight();
++$total_count = $_SESSION['cart']->count_contents();
++$selected = isset($_SESSION['customer_country_id']) ? $_SESSION['customer_country_id'] : STORE_COUNTRY;
++if (!isset($_SESSION['customer_id'])) {
++
++    if (isset($_SESSION['country'])) {
++        $selected = $_SESSION['country'];
++     } else {
++        $selected = STORE_COUNTRY;
++    }
++    $module_smarty->assign('SELECT_COUNTRY', xtc_get_country_list(array ('name' => 'country'), $selected, 'onchange="this.form.submit()"'));
++}
++
++if (!isset($order->delivery['country']['iso_code_2']) || $order->delivery['country']['iso_code_2'] == '') {
++  unset($_SESSION['shipping']);
++  $delivery_zone = xtc_db_fetch_array(xtc_db_query("SELECT countries_id, countries_iso_code_2, countries_name FROM ".TABLE_COUNTRIES." WHERE countries_id = ". $selected));
++  $order->delivery['country']['iso_code_2'] = $delivery_zone['countries_iso_code_2'];
++  $order->delivery['country']['title'] = $delivery_zone['countries_name'];
++  $order->delivery['country']['id'] = $delivery_zone['countries_id'];
++}
++
++$_SESSION['delivery_zone'] = $order->delivery['country']['iso_code_2'];
++require (DIR_WS_CLASSES.'shipping.php');
++$shipping = new shipping;
++$quotes = $shipping->quote();
++
++$free_shipping = $free_shipping_freeamount = false;
++if (defined('MODULE_ORDER_TOTAL_SHIPPING_FREE_SHIPPING') && (MODULE_ORDER_TOTAL_SHIPPING_FREE_SHIPPING == 'true')) {
++    switch (MODULE_ORDER_TOTAL_SHIPPING_DESTINATION) {
++        case 'national' :
++            if ($order->delivery['country']['id'] == STORE_COUNTRY)
++                $pass = true;
++            break;
++        case 'international' :
++            if ($order->delivery['country']['id'] != STORE_COUNTRY)
++                $pass = true;
++            break;
++        case 'both' :
++            $pass = true;
++            break;
++        default :
++            $pass = false;
++            break;
++    }
++    if (($pass == true) && ($order->info['total'] >= $xtPrice->xtcFormat(MODULE_ORDER_TOTAL_SHIPPING_FREE_SHIPPING_OVER, false, 0, true))) {
++        $free_shipping = true;
++    }
++}
++$has_freeamount = false;
++foreach ($quotes as $quote) {
++    if ($quote['id'] == 'freeamount') {
++        $has_freeamount = true;
++        if (isset($quote['methods'])) {
++            $free_shipping_freeamount = true;
++            break;
++        }
++    }
++}
++include (DIR_WS_LANGUAGES.$_SESSION['language'].'/modules/order_total/ot_shipping.php');
++
++$total = $_SESSION['cart']->show_total();
++
++$shipping_content = array ();
++if ($free_shipping == true) {
++    $shipping_content[] = array(
++        'NAME' => FREE_SHIPPING_TITLE,
++        'VALUE' => $xtPrice->xtcFormat(0, true, 0, true)
++    );
++} else if ($free_shipping_freeamount) {
++    $shipping_content[] = array(
++        'NAME' => $quote['module'] . ' - ' . $quote['methods'][0]['title'],
++        'VALUE' => $xtPrice->xtcFormat(0, true, 0, true)
++    );
++} else {
++    if ($has_freeamount) {
++        $module_smarty->assign('FREE_SHIPPING_INFO', sprintf(FREE_SHIPPING_DESCRIPTION, $xtPrice->xtcFormat(MODULE_ORDER_TOTAL_SHIPPING_FREE_SHIPPING_OVER, true, 0, true)));
++    }
++    $i = 0;
++    foreach ($quotes AS $quote) {
++      if ($quote['id'] != 'freeamount') {
++      $quote['methods'][0]['cost'] = $xtPrice->xtcCalculateCurr($quote['methods'][0]['cost']);
++      $total += ((isset($quote['tax']) && $quote['tax'] > 0) ? $xtPrice->xtcAddTax($quote['methods'][0]['cost'],$quote['tax']) : (!empty($quote['methods'][0]['cost']) ? $quote['methods'][0]['cost'] : '0'));
++      $shipping_content[$i] = array(
++        'NAME' => $quote['module'] . ' - ' . $quote['methods'][0]['title'],
++            'VALUE' => $xtPrice->xtcFormat(((isset($quote['tax']) && $quote['tax'] > 0) ? $xtPrice->xtcAddTax($quote['methods'][0]['cost'],$quote['tax']) : (!empty($quote['methods'][0]['cost']) ? $quote['methods'][0]['cost'] : '0')), true)
++            );
++          $i++;
++        }
++    }
++}
++#unset($_SESSION['billto']);
++unset($_SESSION['delivery_zone']);
++$module_smarty->assign('shipping_content', $shipping_content);
++$module_smarty->assign('COUNTRY', $order->delivery['country']['title']);
++
++if (count($shipping_content) <= 1) {
++    $module_smarty->assign('total', $xtPrice->xtcFormat($total, true));
++}
++//EOF - GTB - show Shipping in cart
++?>
+\ No newline at end of file
+diff --git a/templates/xtc5/module/order_details.html b/templates/xtc5/module/order_details.html
+index ed54d6a..7107ca5 100644
+--- a/templates/xtc5/module/order_details.html
++++ b/templates/xtc5/module/order_details.html
+@@ -1,3 +1,4 @@
++{config_load file="$language/lang_$language.conf" section="checkout_new_address"}
+ {config_load file="$language/lang_$language.conf" section="shopping_cart"}
+ <table class="orderdetails" width="100%" border="0" cellspacing="0" cellpadding="6">
+   <tr class="headerrow">
+@@ -32,7 +33,24 @@
+   </tr>
+   {/foreach}
+   <tr>
+-    <td colspan="4" class="subtotal">{$UST_CONTENT}<strong>{$TOTAL_CONTENT}</strong>{if $SHIPPING_INFO}{$SHIPPING_INFO}{/if}</td>
+-    <td class="subtotal">&nbsp;</td>
++    <td colspan="5" class="subtotal">
++        {if $SELECT_COUNTRY}{#text_country#} {$SELECT_COUNTRY}{/if}<br />
++    </td>
+   </tr>
+-</table>
++  <tr>
++    <td colspan="2" class="subtotal">
++        &nbsp;
++    </td>
++    <td colspan="3" class="subtotal">
++        {if $UST_CONTENT}{$UST_CONTENT}{else}<strong>{php}printf(TAX_INFO_EXCL, ''){/php}</strong><br />{/if}
++        <u>{$TOTAL_CONTENT}</u><br />
++        {foreach name=aussen item=shipping_data from=$shipping_content}
++        {$shipping_data.NAME} ({$COUNTRY}): {$shipping_data.VALUE}<br />
++        {/foreach}
++        {if $total}
++        <strong>{#text_total#}: {$total}<br /></strong>
++        {/if}
++        {if $FREE_SHIPPING_INFO}<br /><i>{$FREE_SHIPPING_INFO}</i>{/if}
++    </td>
++  </tr>
++</table>
+\ No newline at end of file
+-- 
+1.7.3.1
+

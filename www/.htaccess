@@ -3,14 +3,17 @@ SetEnv DEVELOP "true"
 
 ErrorDocument 404 ../cache/404.html
 
-# Wordpress Redirects
-
 RewriteEngine On
 RewriteRule ^$ ../cache/index.html [L]
 RewriteRule ^archiv\.html$ ../cache/archiv.html [L]
 RewriteRule ^feed\.xml$ ../cache/feed.xml [L]
 RewriteRule ^(\d{4})/(\d{2})/(\d{2})/(.+\.html)$ ../cache/posts/$1_$2_$3_$4 [L]
+RewriteCond %{REQUEST_FILENAME} !-f
 RewriteRule ^.*\.html$ ../cache/pages/$0 [QSA]
+
+# Wordpress Redirects
+RewriteRule ^(\d{4})/(\d{2})/(\d{2})/([^/]+)/(?<!\.html)$ http://neunzehn83.de/blog/$1/$2/$3/$4.html [L]
+RewriteRule ^feed/$ http://neunzehn83.de/blog/feed.xml [L]
 
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteRule .* index.php [L,QSA]

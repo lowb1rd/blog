@@ -524,84 +524,86 @@ namespace {
         }
         public function gc() {
             $handle = opendir($this->dir);
-            while (($file = readdir($handle)) !== false) {
+            while (($file = readdir($handle)) !== false && $file != '.' && $file != '..') {
                 if (filemtime($this->dir.$file) < time()) {
                     unlink($this->dir.$file);
                 }
             }
         }
     }
-    class CacheBackendMemcache extends Memcache implements CacheBackend {
-        //@todo: delete /w wildcard
-        private $connected = false;
-        private $host;
-        private $port;
-        private $config;
-        private $cacheIDs;
+	if (class_exists('Memcache')) {
+    	class CacheBackendMemcache extends Memcache implements CacheBackend {
+	        //@todo: delete /w wildcard
+	        private $connected = false;
+	        private $host;
+	        private $port;
+	        private $config;
+	        private $cacheIDs;
 
-        public function __construct($host, $port, $config = array()) {
-            $this->config = (object)array_merge(array('env' => 'default'), $config);
-            $this->host = $host;
-            $this->port = $port;
-        }
+	        public function __construct($host, $port, $config = array()) {
+	            $this->config = (object)array_merge(array('env' => 'default'), $config);
+	            $this->host = $host;
+	            $this->port = $port;
+	        }
 
-        public function connect() {
-            if ($this->connected) return true;
-            $this->connected = true;
-            parent::connect($this->host, $this->port);
-        }
+	        public function connect() {
+	            if ($this->connected) return true;
+	            $this->connected = true;
+	            parent::connect($this->host, $this->port);
+	        }
 
-        public function set($cache_id, $value, $ttl, $compress) {
-            $this->connect();
-            $compress = $compress ? MEMCACHE_COMPRESSED : 0;
-            parent::set($cache_id, $value, $compress, $ttl);
-        }
-        public function get($cache_id, $flags = 0) {
-            $this->connect();
-            return parent::get($cache_id, $flags);
-        }
-        public function has($cache_id) {
-            $this->connect();
-            if ($this->add($cache_id, '')) {
-                $this->delete($cache_id, 0);
-                return false;
-            }
-            return true;
-        }
-        public function delete($cache_id) {
-            if (substr($cache_id, -1) == '*') {
-                $cnt = 0;
-                $cache_id = substr($cache_id, 0, -1);
-                $this->getCacheIDs();
-                foreach ($this->cacheIDs as $cid) {
-                    if (strpos($cid, $cache_id) === 0) {
-                        if (parent::delete($cid, 0)) {
-                            $cnt++;
-                        }
-                    }
-                }
-                return $cnt;
-            }
-            return parent::delete($cache_id, 0);
-        }
-        public function __wakeup() {
-            $this->connected = false;
-            $this->connect();
-        }
-        private function getCacheIDs() {
-            if ($this->cacheIDs) return;
-            $allSlabs = $this->getExtendedStats('slabs');
-            foreach ($allSlabs as $server => $slabs)
-                foreach ($slabs as $slabId => $slabMeta)
-                    if ((int)$slabId)
-                        foreach ($this->getExtendedStats('cachedump',(int)$slabId) as $server => $entries)
-                            if ($entries)
-                                foreach($entries as $eName => $eData)
-                                    $this->cacheIDs[] = $eName;
-            return $list;
-        }
+	        public function set($cache_id, $value, $ttl, $compress) {
+	            $this->connect();
+	            $compress = $compress ? MEMCACHE_COMPRESSED : 0;
+	            parent::set($cache_id, $value, $compress, $ttl);
+	        }
+	        public function get($cache_id, $flags = 0) {
+	            $this->connect();
+	            return parent::get($cache_id, $flags);
+	        }
+	        public function has($cache_id) {
+	            $this->connect();
+	            if ($this->add($cache_id, '')) {
+	                $this->delete($cache_id, 0);
+	                return false;
+	            }
+	            return true;
+	        }
+	        public function delete($cache_id) {
+	            if (substr($cache_id, -1) == '*') {
+	                $cnt = 0;
+	                $cache_id = substr($cache_id, 0, -1);
+	                $this->getCacheIDs();
+	                foreach ($this->cacheIDs as $cid) {
+	                    if (strpos($cid, $cache_id) === 0) {
+	                        if (parent::delete($cid, 0)) {
+	                            $cnt++;
+	                        }
+	                    }
+	                }
+	                return $cnt;
+	            }
+	            return parent::delete($cache_id, 0);
+	        }
+	        public function __wakeup() {
+	            $this->connected = false;
+	            $this->connect();
+	        }
+	        private function getCacheIDs() {
+	            if ($this->cacheIDs) return;
+	            $allSlabs = $this->getExtendedStats('slabs');
+	            foreach ($allSlabs as $server => $slabs)
+	                foreach ($slabs as $slabId => $slabMeta)
+	                    if ((int)$slabId)
+	                        foreach ($this->getExtendedStats('cachedump',(int)$slabId) as $server => $entries)
+	                            if ($entries)
+	                                foreach($entries as $eName => $eData)
+	                                    $this->cacheIDs[] = $eName;
+	            return $list;
+	        }
 
-    }
+	    }
+	}
     class _Cache {
         private $backend;
 
@@ -1273,6 +1275,7 @@ namespace View {
         }
     }
     function url($url, $params = array(), $qs_params = array()) {
+        if (preg_match('#^(https?:)?//#', $url)) return $url;
         $ext = $url[strlen($url)-1] != '/' && strpos($url, '.') === false ? _::Router()->getExt() : '';
         $path = array();
         if ($params) {

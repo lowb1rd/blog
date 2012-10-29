@@ -1,0 +1,47 @@
+From 8e6750d15c6d7df72cafb2cd759b23eff424e44f Mon Sep 17 00:00:00 2001
+From: lowb1rd <froxlor@mail.acme-labs.de>
+Date: Fri, 6 Jan 2012 14:46:39 +0100
+Subject: [PATCH] Apache: ServerAlias length limit not obeyed
+
+---
+ scripts/jobs/cron_tasks.inc.http.10.apache.php |   12 +++++++-----
+ 1 files changed, 7 insertions(+), 5 deletions(-)
+
+diff --git a/scripts/jobs/cron_tasks.inc.http.10.apache.php b/scripts/jobs/cron_tasks.inc.http.10.apache.php
+index 2d0cc7a..6223e15 100644
+--- a/scripts/jobs/cron_tasks.inc.http.10.apache.php
++++ b/scripts/jobs/cron_tasks.inc.http.10.apache.php
+@@ -446,11 +446,16 @@ class apache
+ 			}
+ 		}
+ 
++		if(trim($server_alias) != '')
++		{
++			$servernames_text.= '  ServerAlias ' . $server_alias . "\n";
++		}
++
+ 		$alias_domains = $this->db->query('SELECT `domain`, `iswildcarddomain`, `wwwserveralias` FROM `' . TABLE_PANEL_DOMAINS . '` WHERE `aliasdomain`=\'' . $domain['id'] . '\'');
+ 
+ 		while(($alias_domain = $this->db->fetch_array($alias_domains)) !== false)
+ 		{
+-			$server_alias.= ' ' . $alias_domain['domain'];
++			$server_alias = '  ServerAlias ' . $alias_domain['domain'];
+ 
+ 			if($alias_domain['iswildcarddomain'] == '1')
+ 			{
+@@ -463,11 +468,8 @@ class apache
+ 					$server_alias.= ' www.' . $alias_domain['domain'];
+ 				}
+ 			}
+-		}
+ 
+-		if(trim($server_alias) != '')
+-		{
+-			$servernames_text.= '  ServerAlias ' . $server_alias . "\n";
++			$servernames_text.= $server_alias . "\n";
+ 		}
+ 
+ 		$servernames_text.= '  ServerAdmin ' . $domain['email'] . "\n";
+-- 
+1.7.3.1
+
