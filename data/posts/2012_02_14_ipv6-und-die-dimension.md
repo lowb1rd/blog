@@ -4,21 +4,21 @@ title: IPv6 und die Dimension
 tags: Allgemein
 slug: ipv6-und-die-dimension
 
-last_updated: 2012-01-07 21:35:52
+last_updated: 2012-10-29 22:01:47
 ---
 
 Ja, so ganz durch ist das Thema IPv6 hier noch nicht - aber bald, versprochen! Also, einen noch:
 
 IPv4-Adressen werden knapp. So wie das Öl. Das weiß jeder. Bei Hetzner ist für Zusatz-Subnetze jetzt schon ein monatlicher Beitrag fällig und Hosteurope stellt unangenehme Fragen bei der Beantragung:
 
-    Sehr geehrte Kundin,
-    sehr geehrter Kunde,
-
-    Ihren Antrag auf weitere IP-Adressen müssen wir zurückweisen.
-
-    Die Verknappung an IPv4-Adressen erfordert es, dass die verbleibenden Adressen sparsam zugewiesen werden. 
-
-    Sie verfügen bereits über X IP-Adressen, die nach derzeitigem Stand nicht voll genutzt werden. Zumindest lassen die Trafficstatistiken und der Content dies vermuten.
+> Sehr geehrte Kundin,
+> sehr geehrter Kunde,
+>
+> Ihren Antrag auf weitere IP-Adressen müssen wir zurückweisen.
+>
+> Die Verknappung an IPv4-Adressen erfordert es, dass die verbleibenden Adressen sparsam zugewiesen werden. 
+>
+> Sie verfügen bereits über X IP-Adressen, die nach derzeitigem Stand nicht voll genutzt werden. Zumindest lassen die Trafficstatistiken und der Content dies vermuten.
 
 Dabei ist die Situation hier in Europa noch völlig entspannt, da "unsere" Vergabestelle, die RIPE, im Gegensatz zur APNIC noch einige /8 in petto hat.
 

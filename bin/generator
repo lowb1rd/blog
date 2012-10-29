@@ -3,7 +3,7 @@
 
 chdir(__DIR__.'/../');
 require '_.php';
-define('DEVELOP', php_uname("n") == 'webserver');
+define('DEVELOP', php_uname("n") == 'macbook');
 
 $log = _::Log(array('type' => 'stdout'));
 _::Registry()->set('CLI', $log);

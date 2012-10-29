@@ -40,13 +40,18 @@ class Builder {
         if (!file_exists($index_dir)) mkdir($index_dir, null, true);
         $datas = array_merge($this->pages, $this->posts);
         $count = count($datas);
+		$cli = _::Registry()->get('CLI');
         foreach ($datas as $k => $data) {
-            if ($cli = _::Registry()->get('CLI')) $cli->log($k+1 ." / $count");
+            if ($cli) {
+				$last = $k == $count-1 ? '' : "\r";
+				$cli->log($k+1 . " / $count$last");
+			} 
             $index_file = $index_dir . $data->type . 's/' . $data->filename;
             $sha1 = sha1_file($data->file);
+
             if (_::Request()->force !== null || 
             !file_exists($index_file) || file_get_contents($index_file) != $sha1) {                  
-                // Update Cache   
+                // Update Cache
                 $this->updatePost($data, $index_dir, $index_file);
             }
         }
@@ -68,7 +73,7 @@ class Builder {
         if (!$data->preview) {
             $cachefile = "cache/".$data->type."s/".$data->uri.".html";
             $date_upd = date('Y-m-d H:i:s');
-            ###$data->setHeader('last_updated', $date_upd);
+            $data->setHeader('last_updated', $date_upd);
             
             $content = $data->getContent();
             $viewdata['title'] = $data->getHeader('title');

@@ -14,7 +14,7 @@ $cli = _::Registry()->get('CLI');
 if ($cli) $cli->log('CheckCache');
 $builder->checkCache('cache/index/');
 
-if ($cli) $cli->log('ceanup');
+if ($cli) $cli->log('cleanup');
 $builder->cleanup();
 
 if ($cli) $cli->log('checkFrontpage');

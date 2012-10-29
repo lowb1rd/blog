@@ -669,9 +669,12 @@ namespace {
             if ($this->config->level <= $lvl) {
                 if ($this->config->type == 'file') {
                     error_log(date('Y-m-d H:i:s') . ': ' . $msg . "\n", 3, $this->config->dir .'/'.$this->config->name);
+                } else if ($msg) {
+                    echo $msg;
+					if ($msg[strlen($msg)-1] != "\r") echo "\n";
                 } else {
-                    echo $msg . "\n";
-                }
+					echo "no message";
+				}
             }
         }
     }
